@@ -79,13 +79,12 @@ WSGI_APPLICATION = "src.wsgi.application"
 
 DATABASES = {
     "default": {
-        "ENGINE": "djongo",
-        "NAME": os.getenv("MONGO_DB"),
-        "CLIENT": {
-            "host": os.getenv("MONGO_URL"),
-            "retryWrites": True,
-            "w": "majority",
-        },
+        "ENGINE": "django.db.backends.postgresql_psycopg2",
+        "NAME": os.getenv("POSTGRES_DB"),
+        "USER": os.getenv("POSTGRES_USER"),
+        "PASSWORD": os.getenv("POSTGRES_PASSWORD"),
+        "HOST": os.getenv("POSTGRES_HOST", "localhost"),
+        "PORT": os.getenv("POSTGRES_PORT", "5432"),
     }
 }
 

@@ -1,5 +1,4 @@
 django
 djangorestframework
 dotenv
-djongo
 setuptools
