@@ -1,8 +1,8 @@
 from sqlalchemy.orm import Session, joinedload
 from typing import List
 
-from app.models.user_model import User as UserModel
-from app.models.user_model import UserEmail as UserEmailModel
+from app.models.user_model import UserModel
+from app.models.user_model import UserEmailModel
 from app.schemas.auth_schema import UserCreateEmail
 
 

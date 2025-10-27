@@ -1,6 +1,7 @@
 from pydantic import BaseModel, EmailStr, Field, field_validator, model_validator
 from enum import Enum
 
+
 class UserRole(str, Enum):
     STUDENT = "STUDENT"
     TEACHER = "TEACHER"
@@ -9,6 +10,7 @@ class UserRole(str, Enum):
 class LoginMethod(str, Enum):
     EMAIL = "EMAIL"
     GOOGLE = "GOOGLE"
+
 
 # Schema đăng ký
 class UserCreateEmail(BaseModel):
@@ -43,3 +45,13 @@ class UserCreateEmail(BaseModel):
 class UserLoginEmail(BaseModel):
     email: EmailStr = Field(max_length=255)
     plain_password: str = Field(min_length=8, max_length=64)
+
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+
+
+class TokenData(BaseModel):
+    sub: str | None = None
+    role: str | None = None
