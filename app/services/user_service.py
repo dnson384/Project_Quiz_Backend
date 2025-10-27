@@ -4,7 +4,7 @@ from typing import List
 
 from app.db.database import get_db
 from app.repositories.user_repo import UserRepository
-from app.models.user_model import User as UserModel
+from app.models.user_model import UserModel
 
 
 def get_user_repo(db: Session = Depends(get_db)):

@@ -14,7 +14,7 @@ from datetime import datetime
 from app.db.database import Base
 
 
-class User(Base):
+class UserModel(Base):
     __tablename__ = "users"
 
     user_id = Column(
@@ -37,13 +37,16 @@ class User(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     __table_args__ = (role_check, login_method_check)
-    email_auth = relationship("UserEmail", back_populates="user", uselist=False)
+    email_auth = relationship("UserEmailModel", back_populates="user", uselist=False)
+    refresh_token = relationship(
+        "RefreshTokenModel", back_populates="user", cascade="all, delete-orphan"
+    )
 
 
-class UserEmail(Base):
+class UserEmailModel(Base):
     __tablename__ = "users_email"
 
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.user_id"), primary_key=True)
     hashed_password = Column(Text, nullable=False)
 
-    user = relationship("User", back_populates="email_auth")
+    user = relationship("UserModel", back_populates="email_auth")

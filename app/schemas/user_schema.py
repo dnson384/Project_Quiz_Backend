@@ -3,6 +3,8 @@ from datetime import datetime
 from uuid import UUID
 from enum import Enum
 
+from app.schemas.auth_schema import Token
+
 
 class UserRole(str, Enum):
     STUDENT = "STUDENT"
@@ -12,6 +14,7 @@ class UserRole(str, Enum):
 class LoginMethod(str, Enum):
     EMAIL = "EMAIL"
     GOOGLE = "GOOGLE"
+
 
 class UserOut(BaseModel):
     user_id: UUID
@@ -26,6 +29,8 @@ class UserOut(BaseModel):
     class Config:
         from_attributes = True
 
+
 class UserResponse(BaseModel):
     message: str
-    data: UserOut
+    user: UserOut
+    token: Token | None = None
