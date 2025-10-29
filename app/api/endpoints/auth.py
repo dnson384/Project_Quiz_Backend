@@ -15,7 +15,7 @@ def register_user_email_endpoint(
     user_in: UserCreateEmail, service: AuthService = Depends()
 ):
     new_user = service.register_user_email(user_in=user_in)
-    return UserResponse(message="Đăng ký thành công", data=new_user)
+    return UserResponse(message="Đăng ký thành công", user=new_user, token=None)
 
 
 @router.post("/login", response_model=UserResponse, status_code=status.HTTP_200_OK)

@@ -34,22 +34,11 @@ class AuthService:
         self.token_repo = token_repo
 
     def register_user_email(self, user_in: UserCreateEmail) -> UserModel:
-        # Kiểm tra mật khẩu & xác nhận mật khẩu
-        if user_in.plain_password != user_in.confirm_password:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Mật khẩu xác nhận không chính xác",
-            )
-
         # Kiểm tra email tồn tại
         if self.user_repo.get_user_by_email(user_in.email):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST, detail="Email đã được đăng ký"
             )
-
-        # Kiểm tra và thay thế username
-        if not user_in.username:
-            user_in.username = user_in.email.split("@")[0]
 
         hashed_password = get_password_hash(user_in.plain_password)
 
@@ -64,7 +53,7 @@ class AuthService:
         if not user:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Email hoặc mật khẩu không chính xác",
+                detail="Tài khoản chưa tồn tại",
             )
 
         # Kiểm tra tài khoản có phương thức là EMAIL
