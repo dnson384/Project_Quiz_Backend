@@ -27,7 +27,6 @@ class UserCreateEmail(BaseModel):
     def set_username_from_email(cls, v: str | None, info):
         if v is not None:
             return v
-
         email_value = info.data.get("email")
         if email_value:
             return email_value.split("@")[0]
