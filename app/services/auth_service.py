@@ -1,5 +1,6 @@
 from fastapi import Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from uuid6 import uuid7
 from datetime import timedelta, datetime, timezone
 
 from app.db.database import get_db
@@ -42,7 +43,10 @@ class AuthService:
 
         hashed_password = get_password_hash(user_in.plain_password)
 
+        user_id = uuid7()
+
         new_user = self.user_repo.create_user_email(
+            user_id=user_id,
             user_in=user_in, hashed_password=hashed_password
         )
         return new_user

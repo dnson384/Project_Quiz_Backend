@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.endpoints import user, auth
+from app.api.endpoints import user, auth, search
 
 app = FastAPI()
 
@@ -26,3 +26,4 @@ def read_root():
 
 app.include_router(user.router, prefix="/api/user", tags=["USER"])
 app.include_router(auth.router, prefix="/api/auth", tags=["AUTHENTICATION"])
+app.include_router(search.router, prefix="/api/search", tags=["SEARCH"])

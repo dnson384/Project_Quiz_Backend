@@ -5,7 +5,6 @@ from sqlalchemy import (
     Text,
     CheckConstraint,
     ForeignKey,
-    text,
 )
 from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import UUID
@@ -17,9 +16,7 @@ from app.db.database import Base
 class UserModel(Base):
     __tablename__ = "users"
 
-    user_id = Column(
-        UUID(as_uuid=True), primary_key=True, default=text("gen_random_uuid()")
-    )
+    user_id = Column(UUID(as_uuid=True), primary_key=True)
     username = Column(String(50), nullable=False)
     email = Column(String(255), unique=True, nullable=False)
     role = Column(String(20), nullable=False)
@@ -37,9 +34,20 @@ class UserModel(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     __table_args__ = (role_check, login_method_check)
+
+    # users_email
     email_auth = relationship("UserEmailModel", back_populates="user", uselist=False)
+    # refresh_tokens
     refresh_token = relationship(
         "RefreshTokenModel", back_populates="user", cascade="all, delete-orphan"
+    )
+    # courses
+    user_course = relationship("CourseModel", back_populates="course_user")
+    # practice_tests
+    user_practice_test = relationship(
+        "PracticeTestModel",
+        back_populates="practice_test_user",
+        cascade="all, delete-orphan",
     )
 
 
