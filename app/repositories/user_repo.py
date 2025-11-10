@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session, joinedload
 from typing import List
+from uuid import UUID
 
 from app.models.user_model import UserModel
 from app.models.user_model import UserEmailModel
@@ -14,20 +15,19 @@ class UserRepository:
         return self.db.query(UserModel).all()
 
     def create_user_email(
-        self, user_in: UserCreateEmail, hashed_password: str
+        self, user_id: UUID, user_in: UserCreateEmail, hashed_password: str
     ) -> UserModel:
         db_user = UserModel(
+            user_id=user_id,
             email=user_in.email,
             username=user_in.username,
             role=user_in.role,
             login_method="EMAIL",
         )
         self.db.add(db_user)
-        # Lấy user_id trước khi commit
-        self.db.flush()
 
         db_email_auth = UserEmailModel(
-            user_id=db_user.user_id, hashed_password=hashed_password
+            user_id=user_id, hashed_password=hashed_password
         )
         self.db.add(db_email_auth)
 
