@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, status, Response
 
 from app.services.auth_service import AuthService
-from app.schemas.auth_schema import UserCreateEmail, UserLoginEmail, Token
+from app.schemas.auth_schema import UserCreateEmail, UserLoginEmail
 from app.schemas.user_schema import UserResponse
 
 
@@ -39,6 +39,5 @@ def login_user_email_endpoint(
     )
     return UserResponse(
         message="Đăng nhập thành công",
-        user=user_auth.get("user_data"),
-        token=Token(access_token=user_auth.get("access_token"), token_type="bearer"),
+        user=user_auth.get("user_data")
     )

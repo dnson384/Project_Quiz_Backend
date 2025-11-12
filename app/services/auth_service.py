@@ -46,8 +46,7 @@ class AuthService:
         user_id = uuid7()
 
         new_user = self.user_repo.create_user_email(
-            user_id=user_id,
-            user_in=user_in, hashed_password=hashed_password
+            user_id=user_id, user_in=user_in, hashed_password=hashed_password
         )
         return new_user
 
@@ -89,12 +88,9 @@ class AuthService:
         jti = refresh_payload.get("jti")
         expires_at = datetime.fromtimestamp(refresh_payload.get("exp"), tz=timezone.utc)
         issued_at = datetime.fromtimestamp(refresh_payload.get("iat"), tz=timezone.utc)
-        
+
         self.token_repo.save_refresh_token_jti(
-            user_id=user.user_id,
-            jti=jti,
-            expires_at=expires_at,
-            issued_at=issued_at
+            user_id=user.user_id, jti=jti, expires_at=expires_at, issued_at=issued_at
         )
 
         return {

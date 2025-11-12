@@ -9,6 +9,7 @@ from app.schemas.auth_schema import Token
 class UserRole(str, Enum):
     STUDENT = "STUDENT"
     TEACHER = "TEACHER"
+    ADMIN = "ADMIN"
 
 
 class LoginMethod(str, Enum):
@@ -21,10 +22,7 @@ class UserOut(BaseModel):
     username: str = Field(max_length=255)
     email: EmailStr = Field(max_length=255)
     role: UserRole
-    login_method: LoginMethod
     avatar_url: str | None = None
-    created_at: datetime
-    updated_at: datetime
 
     class Config:
         from_attributes = True
@@ -33,4 +31,3 @@ class UserOut(BaseModel):
 class UserResponse(BaseModel):
     message: str
     user: UserOut
-    token: Token | None = None

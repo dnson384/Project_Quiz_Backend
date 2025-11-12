@@ -28,10 +28,35 @@ class SearchServices:
     def search_by_keyword(self, query_input: SearchInput) -> dict:
         try:
             keyword = query_input.keyword
-            courses_result = self.course_repo.get_courses_by_keyword(keyword)
-            practice_tests_result = (
-                self.practice_test_repo.get_practice_tests_by_keyword(keyword)
-            )
-            return {"courses": courses_result, "practice_tests": practice_tests_result}
+            type = query_input.type
+            cursor_id = query_input.cursor_id
+            courses_result = []
+            practice_tests_result = []
+
+            print(keyword, type, cursor_id)
+
+            match type:
+                case "all":
+                    courses_result = self.course_repo.get_courses_by_keyword(keyword)
+
+                    practice_tests_result = (
+                        self.practice_test_repo.get_practice_tests_by_keyword(keyword)
+                    )
+                case "courses":
+                    courses_result = self.course_repo.get_courses_by_keyword(
+                        keyword, cursor_id
+                    )
+                case "practice_tests":
+                    practice_tests_result = (
+                        self.practice_test_repo.get_practice_tests_by_keyword(
+                            keyword, cursor_id
+                        )
+                    )
+
+            return {
+                "courses": courses_result,
+                "practice_tests": practice_tests_result,
+            }
         except Exception as e:
-            print(e)
+            print("Lỗi trong quá trình tìm kiếm", e)
+            raise

@@ -1,0 +1,76 @@
+from uuid import UUID
+from uuid6 import uuid7
+
+
+class PracticeTestQuestion:
+    def __init__(
+        self,
+        _question_id: UUID,
+        _practice_test_id: UUID,
+        _question_text: str,
+        _question_type: str,
+    ):
+        if not _practice_test_id:
+            raise ValueError("Không có bài kiểm tra")
+
+        PracticeTestQuestion.validate_question(_question_text, _question_type)
+
+        self._question_id = _question_id
+        self._practice_test_id = _practice_test_id
+        self._question_text = _question_text
+        self._question_type = _question_type
+
+    @classmethod
+    def create_new_question(
+        cls, practice_test_id: UUID, question_text: str, question_type: str
+    ) -> "PracticeTestQuestion":
+        return cls(
+            _question_id=uuid7(),
+            _practice_test_id=practice_test_id,
+            _question_text=question_text,
+            _question_type=question_type,
+        )
+
+    @property
+    def question_id(self) -> UUID:
+        return self._question_id
+
+    @property
+    def practice_test_id(self) -> UUID:
+        return self._practice_test_id
+
+    @property
+    def question_text(self) -> str:
+        return self._question_text
+
+    @property
+    def question_type(self) -> str:
+        return self._question_type
+
+    def update_question(
+        self, new_question_text: str = None, new_question_type: str = None
+    ):
+        question_text_to_check = (
+            new_question_text if new_question_text is not None else self._question_text
+        )
+        question_type_to_check = (
+            new_question_type if new_question_type is not None else self._question_type
+        )
+
+        try:
+            self.validate_question(question_text_to_check, question_type_to_check)
+        except ValueError as e:
+            raise ValueError(f"Cập nhật không hợp lệ: {e}")
+
+        if new_question_text is not None and new_question_text != self._question_text:
+            self._question_text = new_question_text
+
+        if new_question_type is not None and new_question_type != self._question_type:
+            self._question_type = new_question_type
+
+    @staticmethod
+    def validate_question(question_text: str, question_type: str):
+        if not question_text:
+            raise ValueError("Không có câu hỏi")
+        if question_type not in ["MULTIPLE_CHOICE", "TRUE_FALSE", "WRITTEN"]:
+            raise ValueError("Loại câu hỏi không hợp lệ")

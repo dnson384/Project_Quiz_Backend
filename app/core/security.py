@@ -54,6 +54,32 @@ def create_refresh_token(payload: dict, expires_delta: timedelta | None = None):
     return encoded_jwt
 
 
+def decode_access_token(access_token: str) -> dict:
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Token không hợp lệ hoặc đã hết hạn",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+
+    try:
+        payload = jwt.decode(access_token, settings.JWT_REFRESH, algorithms=["HS256"])
+        return payload
+    except ExpiredSignatureError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token đã hết hạn",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    except InvalidTokenError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token không hợp lệ (Chữ ký sai)",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    except Exception:
+        raise credentials_exception
+
+
 def decode_refresh_token(refresh_token: str) -> dict:
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,

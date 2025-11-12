@@ -18,7 +18,6 @@ class RefreshTokenRepository:
             expires_at=expires_at,
             issued_at=issued_at,
         )
-        print(db_token)
 
         self.db.add(db_token)
         self.db.commit()
