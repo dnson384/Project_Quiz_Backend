@@ -4,51 +4,51 @@ from datetime import datetime
 from dataclasses import dataclass
 
 
-class Course:
+class PracticeTest:
     def __init__(
         self,
-        _course_id: UUID,
+        _practice_test_id: UUID,
         _user_id: UUID,
-        _course_name: str,
+        _practice_test_name: str,
         _created_at: datetime,
         _updated_at: datetime,
     ):
         if not _user_id:
             raise ValueError("Không có người dùng")
-        if not _course_name:
-            raise ValueError("Tên học phần không được để trống")
+        if not _practice_test_name:
+            raise ValueError("Tên bài kiểm tra không được để trống")
 
-        self._course_id = _course_id
+        self._practice_test_id = _practice_test_id
         self._user_id = _user_id
-        self._course_name = _course_name
+        self._practice_test_name = _practice_test_name
         self._created_at = _created_at
         self._updated_at = _updated_at
 
     @classmethod
-    def create_new_course(
+    def create_new_practice_test(
         cls,
         user_id: UUID,
-        course_name: str,
-    ) -> "Course":
+        practice_test_name: str,
+    ) -> "PracticeTest":
         return cls(
-            _course_id=uuid7(),
+            _practice_test_id=uuid7(),
             _user_id=user_id,
-            _course_name=course_name,
+            _practice_test_name=practice_test_name,
             _created_at=datetime.utcnow(),
             _updated_at=datetime.utcnow(),
         )
 
     @property
-    def course_id(self) -> UUID:
-        return self._course_id
+    def practice_test_id(self) -> UUID:
+        return self._practice_test_id
 
     @property
     def user_id(self) -> UUID:
         return self._user_id
 
     @property
-    def course_name(self) -> str:
-        return self._course_name
+    def practice_test_name(self) -> str:
+        return self._practice_test_name
 
     @property
     def created_at(self) -> datetime:
@@ -58,24 +58,15 @@ class Course:
     def updated_at(self) -> datetime:
         return self._updated_at
 
-    def update_course(self, new_course_name: str = None):
-        if not new_course_name:
-            raise ValueError("Tên học phần không được để trống")
-        self._course_name = new_course_name
+    def update_course(self, new_practice_test_name: str = None):
+        if not new_practice_test_name:
+            raise ValueError("Tên bài kiểm tra không được để trống")
+        self._practice_test_name = new_practice_test_name
         self._updated_at = datetime.utcnow()
 
 
 @dataclass(frozen=True)
-class CourseInput:
-    keyword: str
-    type: str
-    cursor_id: str | None
-
-
-@dataclass(frozen=True)
-class CourseSearchResult:
-    course_id: UUID
-    course_name: str
+class PracticeTestSearchResult:
+    practice_test_id: UUID
+    practice_test_name: str
     author_username: str
-    author_role: str
-    num_of_terms: int
