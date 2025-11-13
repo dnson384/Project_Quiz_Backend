@@ -2,8 +2,22 @@ import re
 from uuid import UUID
 from uuid6 import uuid7
 from datetime import datetime
+from dataclasses import dataclass
+from enum import Enum
 
 EMAIL_REGEX = re.compile(r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$")
+
+
+class UserRole(str, Enum):
+    ADMIN = "ADMIN"
+    STUDENT = "STUDENT"
+    TEACHER = "TEACHER"
+
+
+class LoginMethod(str, Enum):
+    EMAIL = "EMAIL"
+    GOOGLE = "GOOGLE"
+    FACEBOOK = "FACEBOOK"
 
 
 class User:
@@ -125,3 +139,17 @@ class User:
 
         if role not in VALID_ROLES:
             raise ValueError(f"Vai trò không hợp lệ. Phải là một trong: {VALID_ROLES}")
+
+
+@dataclass(frozen=True)
+class CreateNewUserEmailInput:
+    email: str
+    username: str | None
+    plain_password: str
+    confirm_password: str
+    role: UserRole
+
+@dataclass(frozen=True)
+class LoginUserEmailInput:
+    email: str
+    plain_password: str
