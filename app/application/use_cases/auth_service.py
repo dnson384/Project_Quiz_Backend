@@ -1,6 +1,6 @@
 from uuid6 import uuid7
 from datetime import datetime, timezone
-from typing import Dict
+from typing import Dict, Optional
 
 from app.domain.exceptions.auth_exceptions import (
     EmailAlreadyExistsError,
@@ -13,6 +13,9 @@ from app.domain.entities.user.user_entity import (
     LoginUserEmailInput,
     User,
 )
+from app.domain.entities.user.user_email_entity import UserEmail
+from app.domain.entities.token.refresh_token_entity import RefreshToken
+
 from app.application.abstractions.security_abstraction import ISecurityService
 from app.application.abstractions.user_abstraction import IUserRepository
 from app.application.abstractions.refresh_token_abstraction import (
@@ -38,12 +41,22 @@ class AuthService:
 
         hashed_password = self.security_service.hash_password(user_in.plain_password)
 
-        user_id = uuid7()
-
-        new_user = self.user_repo.create_new_user_email(
-            user_id=user_id, user_in=user_in, hashed_password=hashed_password
+        new_user = User.create_new_user(
+            username=user_in.username,
+            email=user_in.email,
+            role=user_in.role,
+            login_method="EMAIL",
         )
-        return new_user
+
+        new_user_email = UserEmail.create_new_user_email(
+            user_id=new_user.user_id, hashed_password=hashed_password
+        )
+
+        try:
+            saved_user = self.user_repo.create_new_user_email(new_user, new_user_email)
+            return saved_user
+        except Exception as e:
+            raise Exception(f"Không thể tạo người dùng: {e}")
 
     def login_user_email(self, user_in: LoginUserEmailInput) -> Dict:
         # Kiểm tra tài khoản tồn tại
@@ -52,12 +65,13 @@ class AuthService:
             raise AccountNotFoundError("Tài khoản chưa tồn tại")
 
         # Kiểm tra tài khoản có phương thức là EMAIL
-        if not user.email_auth:
+        if not user.login_method == "EMAIL":
             raise WrongAuthMethodError("Tài khoản được đăng nhập bằng phương thức khác")
 
         # Kiểm tra mật khẩu
+        user_email_auth = self.user_repo.get_user_email_auth(user.user_id)
         if not self.security_service.verify_password(
-            user_in.plain_password, user.email_auth.hashed_password
+            user_in.plain_password, user_email_auth.hashed_password
         ):
             raise InvalidCredentialsError("Email hoặc mật khẩu không chính xác")
 
@@ -76,7 +90,12 @@ class AuthService:
         issued_at = datetime.fromtimestamp(refresh_payload.get("iat"), tz=timezone.utc)
 
         self.token_repo.save_refresh_token_jti(
-            user_id=user.user_id, jti=jti, expires_at=expires_at, issued_at=issued_at
+            payload=RefreshToken(
+                _jti=jti,
+                _user_id=user.user_id,
+                _expires_at=expires_at,
+                _issued_at=issued_at,
+            )
         )
 
         return {
@@ -84,3 +103,31 @@ class AuthService:
             "access_token": access_token,
             "refresh_token": refresh_token,
         }
+
+    def validate_access_token(self, access_token: str) -> Optional[User]:
+        payload = self.security_service.decode_access_token(access_token)
+        user = self.user_repo.get_user_by_id(payload.get("sub"))
+        if not user:
+            raise AccountNotFoundError("Tài khoản không còn tồn tại")
+        return user
+
+    def refresh_access_token(self, refresh_token: str) -> Dict:
+        payload = self.security_service.decode_refresh_token(refresh_token)
+
+        jti = payload.get("jti")
+        user_id = payload.get("sub")
+
+        if not self.token_repo.is_jti_valid(jti):
+            raise InvalidCredentialsError(
+                "Refresh token đã bị thu hồi hoặc không tồn tại"
+            )
+
+        user = self.user_repo.get_user_by_id(user_id)
+        if not user:
+            raise AccountNotFoundError("Tài khoản không còn tồn tại")
+
+        new_access_token = self.security_service.create_access_token(
+            {"sub": payload.get("sub"), "role": payload.get("role")}
+        )
+
+        return {"user_data": user, "access_token": new_access_token}

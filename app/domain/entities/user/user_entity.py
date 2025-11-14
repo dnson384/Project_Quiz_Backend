@@ -28,7 +28,7 @@ class User:
         _email: str,
         _role: str,
         _login_method: str,
-        _avatar_url: str | None,
+        _avatar_url: str,
         _created_at: datetime,
         _updated_at: datetime,
     ):
@@ -52,8 +52,9 @@ class User:
         email: str,
         role: str,
         login_method: str,
-        avatar_url: str = None,
+        avatar_url: str = '/public/avatar_icon/owl.jpg',
     ) -> "User":
+        print("run here")
         return cls(
             _user_id=uuid7(),
             _username=username,

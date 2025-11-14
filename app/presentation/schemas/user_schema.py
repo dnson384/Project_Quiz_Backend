@@ -28,4 +28,5 @@ class UserOut(BaseModel):
 class UserResponse(BaseModel):
     message: str
     user: UserOut
-    token: str | None
+    access_token: str | None
+    refresh_token: str | None

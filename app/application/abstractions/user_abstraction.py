@@ -2,14 +2,19 @@ from abc import ABC, abstractmethod
 from uuid import UUID
 from typing import Optional
 
-from app.domain.entities.user.user_entity import User, CreateNewUserEmailInput
+from app.domain.entities.user.user_entity import User
+from app.domain.entities.user.user_email_entity import UserEmail
 
 
 class IUserRepository(ABC):
     @abstractmethod
     def create_new_user_email(
-        self, user_id: UUID, user_in: CreateNewUserEmailInput, hashed_password: str
+        self, user: User, user_email: UserEmail
     ) -> User:
+        pass
+
+    @abstractmethod
+    def get_user_email_auth(self, id: str) -> Optional[UserEmail]:
         pass
 
     @abstractmethod

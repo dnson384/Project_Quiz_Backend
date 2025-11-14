@@ -2,6 +2,7 @@ from fastapi import Depends
 
 from app.application.use_cases.search_service import SearchServices
 from app.application.use_cases.auth_service import AuthService
+from app.application.use_cases.user_service import UserServices
 
 from app.presentation.controllers.search_controller import SearchController
 from app.presentation.controllers.auth_controller import AuthController
@@ -50,3 +51,9 @@ def get_auth_controller(
     service: AuthService = Depends(get_auth_service),
 ) -> AuthController:
     return AuthController(service)
+
+
+def get_user_service(
+    user_repo: IUserRepository = Depends(get_user_repo),
+) -> UserServices:
+    return UserServices(user_repo)

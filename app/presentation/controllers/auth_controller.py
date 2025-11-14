@@ -45,3 +45,6 @@ class AuthController:
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Đã xảy ra lỗi không mong muốn.",
             )
+
+    def validate_user(self, access_token: str):
+        payload = self.service.validate_access_token(access_token)

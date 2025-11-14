@@ -22,8 +22,6 @@ class SearchServices:
             courses_result = []
             practice_tests_result = []
 
-            print(keyword, type, cursor_id)
-
             match type:
                 case "all":
                     courses_result = self.course_repo.get_courses_by_keyword(keyword)

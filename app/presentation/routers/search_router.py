@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, status
 
 from app.presentation.controllers.search_controller import SearchController
-from app.presentation.dependencies import get_search_controller
+from app.presentation.dependencies.dependencies import get_search_controller
 from app.presentation.schemas.search_schema import SearchInput, SearchOutput
 
 router = APIRouter(prefix="/search", tags=["Search"])
