@@ -1,59 +1,20 @@
-from fastapi import Depends, HTTPException
-from sqlalchemy.orm import Session
-from typing import List
+from app.domain.entities.user.user_entity import User
+from app.application.abstractions.user_abstraction import IUserRepository
+from app.application.abstractions.auth_abstraction import IAuthService
 
-from app.infrastructure.database.connection import get_db
-from app.infrastructure.config.security import (
-    create_access_token,
-    decode_access_token,
-    decode_refresh_token,
-)
-from app.infrastructure.database.repositories.user_repo import UserRepository
-from app.infrastructure.database.models.user_model import UserModel
-
-
-def get_user_repo(db: Session = Depends(get_db)):
-    return UserRepository(db)
+from app.domain.exceptions.auth_exceptions import AccountNotFoundError
 
 
 class UserServices:
-    def __init__(self, repo: UserRepository = Depends(get_user_repo)):
-        self.repo = repo
+    def __init__(self, user_repo: IUserRepository, auth_service: IAuthService):
+        self.user_repo = user_repo
+        self.auth_service = auth_service
 
-    def get_all_users(self) -> List[UserModel]:
-        users = self.repo.get_all_users()
-        return users
+    def get_me(self, access_token: str | None):
+        payload = self.auth_service.validate_access_token(access_token)
 
-    def get_me(self, access_token: str | None, refresh_token: str | None) -> UserModel:
-        if not access_token:
-            raise HTTPException(status_code=401, detail="Không tìm thấy access token")
-
-        try:
-            access_token_payload = decode_access_token(access_token)
-            me = self.repo.get_user_by_id(access_token_payload.get("sub"))
-            return {"current_user": me, "access_token": None}
-        except HTTPException as http_err:
-            if http_err.detail == "Token không hợp lệ hoặc đã hết hạn":
-                if not refresh_token:
-                    raise HTTPException(
-                        status_code=401, detail="Không tìm thấy refresh token"
-                    )
-
-                try:
-                    refresh_token_payload = decode_refresh_token(refresh_token)
-                    new_access_token = create_access_token(
-                        {
-                            "sub": refresh_token_payload.get("sub"),
-                            "role": refresh_token_payload.get("role"),
-                        }
-                    )
-                    me = self.repo.get_user_by_id(refresh_token_payload.get("sub"))
-                    return {"current_user": me, "access_token": new_access_token}
-                except HTTPException as refresh_err:
-                    raise HTTPException(
-                        status_code=401,
-                        detail=refresh_err.detail or "Phiên đăng nhập hết hạn",
-                    )
-            raise http_err
-        except Exception as e:
-            raise HTTPException(status_code=500, detail="Lỗi máy chủ nội bộ")
+        user_id = payload.get("sub")
+        cur_user = self.user_repo.get_user_by_id(id=user_id)
+        if not cur_user:
+            raise AccountNotFoundError("Không tìm được tài khoản người dùng")
+        return cur_user

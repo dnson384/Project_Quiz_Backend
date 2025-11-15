@@ -1,0 +1,26 @@
+from abc import ABC, abstractmethod
+from typing import Dict
+
+from app.domain.entities.user.user_entity import (
+    CreateNewUserEmailInput,
+    LoginUserEmailInput,
+    User,
+)
+
+
+class IAuthService(ABC):
+    @abstractmethod
+    def register_user_email(self, user_in: CreateNewUserEmailInput) -> User:
+        pass
+
+    @abstractmethod
+    def login_user_email(self, user_in: LoginUserEmailInput) -> Dict:
+        pass
+
+    @abstractmethod
+    def validate_access_token(self, access_token: str) -> Dict:
+        pass
+
+    @abstractmethod
+    def refresh_access_token(self, refresh_token: str) -> Dict:
+        pass

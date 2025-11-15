@@ -2,9 +2,11 @@ from fastapi import Depends
 
 from app.application.use_cases.search_service import SearchServices
 from app.application.use_cases.auth_service import AuthService
+from app.application.use_cases.user_service import UserServices
 
 from app.presentation.controllers.search_controller import SearchController
 from app.presentation.controllers.auth_controller import AuthController
+from app.presentation.controllers.user_controller import UserController
 
 from app.application.abstractions.course_abstraction import ICourseRepository
 from app.application.abstractions.practice_test_abstraction import (
@@ -15,6 +17,7 @@ from app.application.abstractions.refresh_token_abstraction import (
     IRefreshTokenRepository,
 )
 from app.application.abstractions.security_abstraction import ISecurityService
+from app.application.abstractions.auth_abstraction import IAuthService
 
 from app.infrastructure.config.dependencies import (
     get_course_repo,
@@ -50,3 +53,16 @@ def get_auth_controller(
     service: AuthService = Depends(get_auth_service),
 ) -> AuthController:
     return AuthController(service)
+
+
+def get_user_service(
+    user_repo: IUserRepository = Depends(get_user_repo),
+    auth_service: IAuthService = Depends(get_auth_service),
+) -> UserServices:
+    return UserServices(user_repo, auth_service)
+
+
+def get_user_controller(
+    service: UserController = Depends(get_user_service),
+) -> UserController:
+    return UserController(service)

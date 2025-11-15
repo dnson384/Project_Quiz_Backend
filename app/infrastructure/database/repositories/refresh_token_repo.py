@@ -2,25 +2,57 @@ from sqlalchemy.orm import Session
 from datetime import datetime
 from uuid import UUID
 
+from app.application.abstractions.refresh_token_abstraction import (
+    IRefreshTokenRepository,
+)
+from app.domain.entities.token.refresh_token_entity import RefreshToken
 from app.infrastructure.database.models.token_model import RefreshTokenModel
 
 
-class RefreshTokenRepository:
+class RefreshTokenRepository(IRefreshTokenRepository):
     def __init__(self, db: Session):
         self.db = db
 
-    def save_refresh_token_jti(
-        self, user_id: UUID, jti: UUID, expires_at: datetime, issued_at: datetime
-    ) -> RefreshTokenModel:
+    def save_refresh_token_jti(self, payload: RefreshToken) -> RefreshToken:
         db_token = RefreshTokenModel(
-            jti=jti,
-            user_id=user_id,
-            expires_at=expires_at,
-            issued_at=issued_at,
+            jti=payload.jti,
+            user_id=payload.user_id,
+            expires_at=payload.expires_at,
+            issued_at=payload.issued_at,
         )
 
         self.db.add(db_token)
         self.db.commit()
         self.db.refresh(db_token)
 
-        return db_token
+        return payload
+
+    def is_jti_valid(self, jti: UUID) -> bool:
+        token = (
+            self.db.query(RefreshTokenModel)
+            .filter(RefreshTokenModel.jti == jti)
+            .first()
+        )
+        return token is not None
+
+    def revoke_refresh_token(self, jti: UUID) -> bool:
+        token = (
+            self.db.query(RefreshTokenModel)
+            .filter(RefreshTokenModel.jti == jti)
+            .first()
+        )
+
+        if token:
+            self.db.delete(token)
+            self.db.commit()
+            return True
+        return False
+
+    def revoke_all_tokens_for_user(self, user_id: UUID) -> int:
+        num_deleted = (
+            self.db.query(RefreshTokenModel)
+            .filter(RefreshTokenModel.user_id == user_id)
+            .delete()
+        )
+        self.db.commit()
+        return num_deleted

@@ -16,6 +16,10 @@ class ISecurityService(ABC):
         pass
 
     @abstractmethod
+    def decode_access_token(self, token: str) -> Dict[str, Any]:
+        pass
+
+    @abstractmethod
     def create_refresh_token(self, payload: Dict[str, Any]) -> str:
         pass
 
