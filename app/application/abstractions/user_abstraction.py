@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-from uuid import UUID
 from typing import Optional
 
 from app.domain.entities.user.user_entity import User
@@ -22,5 +21,5 @@ class IUserRepository(ABC):
         pass
 
     @abstractmethod
-    def get_user_by_id(self, user_id: UUID) -> Optional[User]:
+    def get_user_by_id(self, id: str) -> Optional[User]:
         pass

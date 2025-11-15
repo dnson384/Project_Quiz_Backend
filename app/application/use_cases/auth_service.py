@@ -21,9 +21,10 @@ from app.application.abstractions.user_abstraction import IUserRepository
 from app.application.abstractions.refresh_token_abstraction import (
     IRefreshTokenRepository,
 )
+from app.application.abstractions.auth_abstraction import IAuthService
 
 
-class AuthService:
+class AuthService(IAuthService):
     def __init__(
         self,
         user_repo: IUserRepository,
@@ -104,12 +105,9 @@ class AuthService:
             "refresh_token": refresh_token,
         }
 
-    def validate_access_token(self, access_token: str) -> Optional[User]:
+    def validate_access_token(self, access_token: str) -> Dict:
         payload = self.security_service.decode_access_token(access_token)
-        user = self.user_repo.get_user_by_id(payload.get("sub"))
-        if not user:
-            raise AccountNotFoundError("Tài khoản không còn tồn tại")
-        return user
+        return payload
 
     def refresh_access_token(self, refresh_token: str) -> Dict:
         payload = self.security_service.decode_refresh_token(refresh_token)
@@ -127,7 +125,7 @@ class AuthService:
             raise AccountNotFoundError("Tài khoản không còn tồn tại")
 
         new_access_token = self.security_service.create_access_token(
-            {"sub": payload.get("sub"), "role": payload.get("role")}
+            {"sub": user.user_id, "role": user.role}
         )
 
-        return {"user_data": user, "access_token": new_access_token}
+        return {"access_token": new_access_token}
