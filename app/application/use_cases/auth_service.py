@@ -1,6 +1,6 @@
 from uuid6 import uuid7
 from datetime import datetime, timezone
-from typing import Dict, Optional
+from typing import Dict
 
 from app.domain.exceptions.auth_exceptions import (
     EmailAlreadyExistsError,

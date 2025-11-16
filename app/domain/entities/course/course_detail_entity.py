@@ -1,5 +1,6 @@
 from uuid import UUID
 from uuid6 import uuid7
+from dataclasses import dataclass
 
 
 class CourseDetail:
@@ -70,3 +71,10 @@ class CourseDetail:
             raise ValueError("Không có thuật ngữ")
         if not definition:
             raise ValueError("Không có định nghĩa")
+
+@dataclass
+class CourseDetailOutput:
+    course_detail_id: str
+    course_id: str
+    term: str
+    definition: str
