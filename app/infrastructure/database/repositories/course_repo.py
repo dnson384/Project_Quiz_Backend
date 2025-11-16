@@ -9,7 +9,7 @@ from app.infrastructure.database.models.course_model import (
 from app.infrastructure.database.models.user_model import UserModel
 
 from app.application.abstractions.course_abstraction import ICourseRepository
-from app.domain.entities.course.course_entity import CourseSearchResult
+from app.domain.entities.course.course_entity import CourseOutput
 
 
 class CoursesRepository(ICourseRepository):
@@ -18,7 +18,7 @@ class CoursesRepository(ICourseRepository):
 
     def get_courses_by_keyword(
         self, keyword: str, cursor_id: Optional[str] = None
-    ) -> List[CourseSearchResult]:
+    ) -> List[CourseOutput]:
         try:
             query = (
                 self.db.query(
@@ -54,10 +54,10 @@ class CoursesRepository(ICourseRepository):
                 .all()
             )
 
-            domain_results: List[CourseSearchResult] = []
+            domain_results: List[CourseOutput] = []
             for row in db_results:
                 domain_results.append(
-                    CourseSearchResult(
+                    CourseOutput(
                         course_id=row.course_id,
                         course_name=row.course_name,
                         author_username=row.username,
@@ -70,4 +70,11 @@ class CoursesRepository(ICourseRepository):
 
         except Exception as e:
             print("Có lỗi xảy ra khi tìm kiếm học phần", e)
+            return []
+
+    def get_random_courses(self) -> List[CourseOutput]:
+        try:
+            return self.db.query(CourseModel).order_by(func.random()).limit(3).all()
+        except Exception as e:
+            print("Có lỗi xảy ra khi lấy học phần ngẫu nhiêneen", e)
             return []

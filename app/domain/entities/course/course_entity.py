@@ -73,7 +73,7 @@ class CourseInput:
 
 
 @dataclass(frozen=True)
-class CourseSearchResult:
+class CourseOutput:
     course_id: UUID
     course_name: str
     author_username: str

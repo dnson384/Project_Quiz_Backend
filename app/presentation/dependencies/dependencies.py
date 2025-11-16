@@ -3,10 +3,12 @@ from fastapi import Depends
 from app.application.use_cases.search_service import SearchServices
 from app.application.use_cases.auth_service import AuthService
 from app.application.use_cases.user_service import UserServices
+from app.application.use_cases.course_service import CourseService
 
 from app.presentation.controllers.search_controller import SearchController
 from app.presentation.controllers.auth_controller import AuthController
 from app.presentation.controllers.user_controller import UserController
+from app.presentation.controllers.course_controller import CourseController
 
 from app.application.abstractions.course_abstraction import ICourseRepository
 from app.application.abstractions.practice_test_abstraction import (
@@ -66,3 +68,15 @@ def get_user_controller(
     service: UserController = Depends(get_user_service),
 ) -> UserController:
     return UserController(service)
+
+
+def get_course_service(
+    course_repo: ICourseRepository = Depends(get_course_repo),
+) -> CourseService:
+    return CourseService(course_repo)
+
+
+def get_course_controller(
+    service: CourseService = Depends(get_course_service),
+) -> CourseController:
+    return CourseController(service)
