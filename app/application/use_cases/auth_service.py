@@ -121,11 +121,12 @@ class AuthService(IAuthService):
             )
 
         user = self.user_repo.get_user_by_id(user_id)
+
         if not user:
             raise AccountNotFoundError("Tài khoản không còn tồn tại")
 
         new_access_token = self.security_service.create_access_token(
-            {"sub": user.user_id, "role": user.role}
+            {"sub": str(user.user_id), "role": user.role}
         )
 
-        return {"access_token": new_access_token}
+        return new_access_token

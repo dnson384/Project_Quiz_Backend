@@ -29,6 +29,7 @@ class SecurityServiceImpl(ISecurityService):
         encoded_payload.update(
             {"exp": int(expire.timestamp()), "iat": int(issued_at.timestamp())}
         )
+
         encoded_jwt = jwt.encode(
             encoded_payload, settings.JWT_SECRET, algorithm="HS256"
         )

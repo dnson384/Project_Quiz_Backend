@@ -74,7 +74,45 @@ class CoursesRepository(ICourseRepository):
 
     def get_random_courses(self) -> List[CourseOutput]:
         try:
-            return self.db.query(CourseModel).order_by(func.random()).limit(3).all()
+            query = (
+                self.db.query(
+                    CourseModel.course_id,
+                    CourseModel.course_name,
+                    UserModel.username,
+                    UserModel.role,
+                    func.count(CourseDetailModel.course_detail_id).label(
+                        "num_of_terms"
+                    ),
+                )
+                .join(UserModel, CourseModel.user_id == UserModel.user_id)
+                .join(
+                    CourseDetailModel,
+                    CourseModel.course_id == CourseDetailModel.course_id,
+                )
+                .group_by(
+                    CourseModel.course_id,
+                    UserModel.username,
+                    UserModel.role,
+                    CourseModel.course_name,
+                )
+                .limit(3)
+                .all()
+            )
+
+            domain_result: List[CourseOutput] = []
+            for item in query:
+                domain_result.append(
+                    CourseOutput(
+                        course_id=item.course_id,
+                        course_name=item.course_name,
+                        author_username=item.username,
+                        author_role=item.role,
+                        num_of_terms=item.num_of_terms,
+                    )
+                )
+
+            return domain_result
+
         except Exception as e:
-            print("Có lỗi xảy ra khi lấy học phần ngẫu nhiêneen", e)
+            print("Có lỗi xảy ra khi lấy học phần ngẫu nhiên", e)
             return []

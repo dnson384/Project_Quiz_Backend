@@ -9,7 +9,8 @@ router = APIRouter(prefix="/user", tags=["User"])
 
 @router.get("/me", response_model=UserOut, status_code=status.HTTP_200_OK)
 def get_me(req: Request, controller: UserController = Depends(get_user_controller)):
-    access_token = req.headers["Authorization"].split("Bearer")[1]
+    access_token = req.headers["Authorization"].split(" ")[-1]
+
     cur_user = controller.get_access_user(access_token=access_token)
     return UserOut(
         user_id=cur_user._user_id,
