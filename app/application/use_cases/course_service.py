@@ -12,7 +12,7 @@ class CourseService:
 
             if not sample_courses:
                 raise CoursesNotFoundError("Không có học phần")
-            
+
             return sample_courses
         except Exception as e:
             raise Exception("Không thể lấy ngẫu nhiên học phần", e)

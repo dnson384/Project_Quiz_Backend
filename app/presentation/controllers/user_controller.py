@@ -10,8 +10,7 @@ class UserController:
 
     def get_access_user(self, access_token: str):
         try:
-            cur_user = self.service.get_me(access_token)
-            return cur_user
+            return self.service.get_me(access_token)
         except AccountNotFoundError as e:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
         except Exception:

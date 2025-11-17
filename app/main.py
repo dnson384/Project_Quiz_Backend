@@ -1,12 +1,27 @@
 import os
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
-from app.presentation.routers import auth_router, search_router, user_router, course_router
+from fastapi.middleware.cors import CORSMiddleware
+
+from app.presentation.routers import (
+    auth_router,
+    search_router,
+    user_router,
+    course_router,
+)
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 PUBLIC_DIR_PATH = os.path.join(BASE_DIR, "public")
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["GET", "POST"],
+    allow_headers=["Content-Type", "Authorization"],
+)
 
 
 @app.get("/")

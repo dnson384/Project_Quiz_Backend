@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, status, Request
 
 from app.presentation.controllers.auth_controller import AuthController
 from app.presentation.dependencies.dependencies import get_auth_controller
@@ -35,3 +35,12 @@ def login_user_email_endpoint(
         access_token=user_auth.get("access_token"),
         refresh_token=user_auth.get("refresh_token"),
     )
+
+
+@router.post("/refresh", status_code=status.HTTP_200_OK)
+def refresh_access_token(
+    req: Request, controller: AuthController = Depends(get_auth_controller)
+):
+    refresh_token = req.headers["Authorization"].split(" ")[-1]
+    new_access_token = controller.re_generate_access_token(refresh_token)
+    return {"access_token": new_access_token}
