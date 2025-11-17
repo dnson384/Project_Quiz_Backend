@@ -66,7 +66,7 @@ class PracticeTest:
 
 
 @dataclass(frozen=True)
-class PracticeTestSearchResult:
+class PracticeTestOutput:
     practice_test_id: UUID
     practice_test_name: str
     author_username: str

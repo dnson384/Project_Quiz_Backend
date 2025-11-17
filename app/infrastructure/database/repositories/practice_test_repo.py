@@ -8,7 +8,7 @@ from app.application.abstractions.practice_test_abstraction import (
     IPracticeTestRepository,
 )
 from app.domain.entities.practice_test.practice_test_entity import (
-    PracticeTestSearchResult,
+    PracticeTestOutput,
 )
 
 
@@ -18,7 +18,7 @@ class PracticeTestRepository(IPracticeTestRepository):
 
     def get_practice_tests_by_keyword(
         self, keyword: str, cursor_id: Optional[str] = None
-    ) -> List[PracticeTestSearchResult]:
+    ) -> List[PracticeTestOutput]:
         try:
             query = (
                 self.db.query(
@@ -37,10 +37,10 @@ class PracticeTestRepository(IPracticeTestRepository):
 
             db_results = query.limit(12).all()
 
-            domain_results: List[PracticeTestSearchResult] = []
+            domain_results: List[PracticeTestOutput] = []
             for row in db_results:
                 domain_results.append(
-                    PracticeTestSearchResult(
+                    PracticeTestOutput(
                         practice_test_id=row.practice_test_id,
                         practice_test_name=row.practice_test_name,
                         author_username=row.username,
@@ -50,4 +50,33 @@ class PracticeTestRepository(IPracticeTestRepository):
 
         except Exception as e:
             print("Error occurred when query practice test", e)
+            return []
+
+    def get_random_practice_test(self) -> List[PracticeTestOutput]:
+        try:
+            query = (
+                self.db.query(
+                    PracticeTestModel.practice_test_id,
+                    PracticeTestModel.practice_test_name,
+                    UserModel.username.label("author_username"),
+                )
+                .join(UserModel, UserModel.user_id == PracticeTestModel.user_id)
+                .limit(3)
+                .all()
+            )
+
+            domain_result: List[PracticeTestOutput] = []
+            for item in query:
+                domain_result.append(
+                    PracticeTestOutput(
+                        practice_test_id=item.practice_test_id,
+                        practice_test_name=item.practice_test_name,
+                        author_username=item.author_username,
+                    )
+                )
+
+            return domain_result
+
+        except Exception as e:
+            print("Có lỗi xảy ra khi lấy bài kiểm tra thử ngẫu nhiên", e)
             return []
