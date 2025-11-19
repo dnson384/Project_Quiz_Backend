@@ -75,6 +75,5 @@ class CourseDetail:
 @dataclass
 class CourseDetailOutput:
     course_detail_id: str
-    course_id: str
     term: str
     definition: str

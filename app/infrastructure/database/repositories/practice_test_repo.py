@@ -1,15 +1,33 @@
 from sqlalchemy.orm import Session
-from typing import List, Optional
+from typing import List, Optional, TypedDict, Dict
+from uuid import UUID
 
-from app.infrastructure.database.models.practice_test_model import PracticeTestModel
+from app.infrastructure.database.models.practice_test_model import (
+    PracticeTestModel,
+    PracticeTestQuestionModel,
+    AnswerOptionModel,
+)
 from app.infrastructure.database.models.user_model import UserModel
 
 from app.application.abstractions.practice_test_abstraction import (
     IPracticeTestRepository,
 )
 from app.domain.entities.practice_test.practice_test_entity import (
-    PracticeTestSearchResult,
+    PracticeTestOutput,
 )
+from app.domain.entities.practice_test.practice_test_question_entity import (
+    QuestionOutput,
+)
+from app.domain.entities.practice_test.answer_option_entity import AnswerOptionOutput
+
+
+class QuestionDetailOutput(TypedDict):
+    question: QuestionOutput
+
+
+class CourseWithDetails(TypedDict):
+    practice_test: PracticeTestOutput
+    question: QuestionDetailOutput
 
 
 class PracticeTestRepository(IPracticeTestRepository):
@@ -18,7 +36,7 @@ class PracticeTestRepository(IPracticeTestRepository):
 
     def get_practice_tests_by_keyword(
         self, keyword: str, cursor_id: Optional[str] = None
-    ) -> List[PracticeTestSearchResult]:
+    ) -> List[PracticeTestOutput]:
         try:
             query = (
                 self.db.query(
@@ -37,10 +55,10 @@ class PracticeTestRepository(IPracticeTestRepository):
 
             db_results = query.limit(12).all()
 
-            domain_results: List[PracticeTestSearchResult] = []
+            domain_results: List[PracticeTestOutput] = []
             for row in db_results:
                 domain_results.append(
-                    PracticeTestSearchResult(
+                    PracticeTestOutput(
                         practice_test_id=row.practice_test_id,
                         practice_test_name=row.practice_test_name,
                         author_username=row.username,
@@ -51,3 +69,102 @@ class PracticeTestRepository(IPracticeTestRepository):
         except Exception as e:
             print("Error occurred when query practice test", e)
             return []
+
+    def get_random_practice_test(self) -> List[PracticeTestOutput]:
+        try:
+            query = (
+                self.db.query(
+                    PracticeTestModel.practice_test_id,
+                    PracticeTestModel.practice_test_name,
+                    UserModel.username.label("author_username"),
+                )
+                .join(UserModel, UserModel.user_id == PracticeTestModel.user_id)
+                .limit(3)
+                .all()
+            )
+
+            domain_result: List[PracticeTestOutput] = []
+            for item in query:
+                domain_result.append(
+                    PracticeTestOutput(
+                        practice_test_id=item.practice_test_id,
+                        practice_test_name=item.practice_test_name,
+                        author_username=item.author_username,
+                    )
+                )
+
+            return domain_result
+
+        except Exception as e:
+            print("Có lỗi xảy ra khi lấy bài kiểm tra thử ngẫu nhiên", e)
+            return []
+
+    def get_practice_test_detail_by_id(self, practice_test_id: str):
+        test_query = (
+            self.db.query(
+                PracticeTestModel.practice_test_id,
+                PracticeTestModel.practice_test_name,
+                UserModel.username.label("author_username"),
+            )
+            .filter(PracticeTestModel.practice_test_id == practice_test_id)
+            .join(UserModel, UserModel.user_id == PracticeTestModel.user_id)
+        ).first()
+
+        question_query = (
+            self.db.query(
+                PracticeTestQuestionModel.question_id,
+                PracticeTestQuestionModel.question_text,
+                PracticeTestQuestionModel.question_type,
+                AnswerOptionModel.option_id,
+                AnswerOptionModel.option_text,
+                AnswerOptionModel.is_correct,
+            )
+            .filter(
+                PracticeTestQuestionModel.practice_test_id == practice_test_id,
+            )
+            .join(
+                PracticeTestModel,
+                PracticeTestModel.practice_test_id
+                == PracticeTestQuestionModel.practice_test_id,
+            )
+            .join(
+                AnswerOptionModel,
+                AnswerOptionModel.question_id == PracticeTestQuestionModel.question_id,
+            )
+            .all()
+        )
+
+        grouped_questions: Dict[UUID, QuestionDetailOutput] = {}
+
+        for item in question_query:
+            if item.question_id not in grouped_questions:
+                grouped_questions[item.question_id] = {
+                    "question": QuestionOutput(
+                        question_id=item.question_id,
+                        question_text=item.question_text,
+                        question_type=item.question_type,
+                    ),
+                    "answer_option": [],
+                }
+
+            grouped_questions[item.question_id]["answer_option"].append(
+                AnswerOptionOutput(
+                    option_id=item.option_id,
+                    option_text=item.option_text,
+                    is_correct=item.is_correct,
+                )
+            )
+
+        test_domain_result = PracticeTestOutput(
+            practice_test_id=test_query.practice_test_id,
+            practice_test_name=test_query.practice_test_name,
+            author_username=test_query.author_username,
+        )
+
+        question_anwser_domain_result: List[QuestionDetailOutput] = list(
+            grouped_questions.values()
+        )
+
+        return CourseWithDetails(
+            practice_test=test_domain_result, question=question_anwser_domain_result
+        )

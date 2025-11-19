@@ -8,6 +8,7 @@ from app.presentation.routers import (
     search_router,
     user_router,
     course_router,
+    practice_test_router
 )
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -35,3 +36,4 @@ app.include_router(auth_router.router, prefix="/api", tags=["AUTHENTICATION"])
 app.include_router(search_router.router, prefix="/api", tags=["SEARCH"])
 app.include_router(user_router.router, prefix="/api", tags=["USER"])
 app.include_router(course_router.router, prefix="/api", tags=["COURSE"])
+app.include_router(practice_test_router.router, prefix="/api", tags=["PRACTICETEST"])

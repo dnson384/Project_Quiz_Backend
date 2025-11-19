@@ -4,11 +4,13 @@ from app.application.use_cases.search_service import SearchServices
 from app.application.use_cases.auth_service import AuthService
 from app.application.use_cases.user_service import UserServices
 from app.application.use_cases.course_service import CourseService
+from app.application.use_cases.practice_test_service import PracticeTestService
 
 from app.presentation.controllers.search_controller import SearchController
 from app.presentation.controllers.auth_controller import AuthController
 from app.presentation.controllers.user_controller import UserController
 from app.presentation.controllers.course_controller import CourseController
+from app.presentation.controllers.practice_test_controller import PracticeTestController
 
 from app.application.abstractions.course_abstraction import ICourseRepository
 from app.application.abstractions.practice_test_abstraction import (
@@ -80,3 +82,15 @@ def get_course_controller(
     service: CourseService = Depends(get_course_service),
 ) -> CourseController:
     return CourseController(service)
+
+
+def get_practice_test_service(
+    practice_test_repo: IPracticeTestRepository = Depends(get_practice_test_repo),
+) -> PracticeTestService:
+    return PracticeTestService(practice_test_repo)
+
+
+def get_practice_test_controller(
+    service: PracticeTestService = Depends(get_practice_test_service),
+) -> PracticeTestController:
+    return PracticeTestController(service)

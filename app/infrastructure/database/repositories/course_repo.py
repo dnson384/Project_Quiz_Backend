@@ -1,6 +1,11 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import func
-from typing import List, Optional
+from typing import List, Optional, TypedDict
+
+from app.domain.entities.course.course_entity import CourseOutput
+from app.domain.entities.course.course_detail_entity import CourseDetailOutput
+
+from app.application.abstractions.course_abstraction import ICourseRepository
 
 from app.infrastructure.database.models.course_model import (
     CourseModel,
@@ -8,8 +13,10 @@ from app.infrastructure.database.models.course_model import (
 )
 from app.infrastructure.database.models.user_model import UserModel
 
-from app.application.abstractions.course_abstraction import ICourseRepository
-from app.domain.entities.course.course_entity import CourseOutput
+
+class CourseWithDetails(TypedDict):
+    course: CourseOutput
+    course_detail: List[CourseDetailOutput]
 
 
 class CoursesRepository(ICourseRepository):
@@ -116,3 +123,52 @@ class CoursesRepository(ICourseRepository):
         except Exception as e:
             print("Có lỗi xảy ra khi lấy học phần ngẫu nhiên", e)
             return []
+
+    def get_course_detail_by_id(self, course_id: Optional[str]) -> CourseWithDetails:
+        try:
+            course_query = (
+                self.db.query(
+                    CourseModel.course_id,
+                    CourseModel.course_name,
+                    UserModel.username,
+                    UserModel.role,
+                )
+                .filter(CourseModel.course_id == course_id)
+                .join(UserModel, UserModel.user_id == CourseModel.user_id)
+                .first()
+            )
+
+            detail_query = (
+                self.db.query(
+                    CourseDetailModel.course_detail_id,
+                    CourseDetailModel.term,
+                    CourseDetailModel.definition,
+                )
+                .filter(CourseDetailModel.course_id == course_id)
+                .all()
+            )
+
+            course_domain_result = CourseOutput(
+                course_id=course_query.course_id,
+                course_name=course_query.course_name,
+                author_username=course_query.username,
+                author_role=course_query.role,
+                num_of_terms=len(detail_query),
+            )
+
+            detail_domain_result: List[CourseDetailOutput] = []
+            for item in detail_query:
+                detail_domain_result.append(
+                    CourseDetailOutput(
+                        course_detail_id=item.course_detail_id,
+                        term=item.term,
+                        definition=item.definition,
+                    )
+                )
+
+            return CourseWithDetails(
+                course=course_domain_result, course_detail=detail_domain_result
+            )
+        except Exception as e:
+            print("Có lỗi xảy ra khi lấy thông tin chi tiết học phần", e)
+            return None
