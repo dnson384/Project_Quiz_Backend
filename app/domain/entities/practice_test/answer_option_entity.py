@@ -1,5 +1,6 @@
 from uuid import UUID
 from uuid6 import uuid7
+from dataclasses import dataclass
 
 
 class AnswerOption:
@@ -69,3 +70,10 @@ class AnswerOption:
             raise ValueError("Không có câu trả lời")
         if _is_correct is None:
             raise ValueError("Câu trả lời không có đúng sai")
+
+
+@dataclass(frozen=True)
+class AnswerOptionOutput:
+    option_id: UUID
+    option_text: str
+    is_correct: bool

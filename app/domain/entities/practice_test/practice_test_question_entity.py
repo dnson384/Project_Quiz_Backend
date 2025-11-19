@@ -1,5 +1,6 @@
 from uuid import UUID
 from uuid6 import uuid7
+from dataclasses import dataclass
 
 
 class PracticeTestQuestion:
@@ -74,3 +75,10 @@ class PracticeTestQuestion:
             raise ValueError("Không có câu hỏi")
         if question_type not in ["MULTIPLE_CHOICE", "TRUE_FALSE", "WRITTEN"]:
             raise ValueError("Loại câu hỏi không hợp lệ")
+
+
+@dataclass(frozen=True)
+class QuestionOutput:
+    question_id: UUID
+    question_text: str
+    question_type: str

@@ -21,6 +21,6 @@ class ICourseRepository(ABC):
     def get_random_courses(self) -> List[CourseOutput]:
         pass
 
-    # @abstractmethod
-    # def get_course_detail_by_id(self, id: str) -> CourseWithDetailsResponse:
-    #     pass
+    @abstractmethod
+    def get_course_detail_by_id(self, course_id: str) -> CourseWithDetailsResponse:
+        pass

@@ -16,3 +16,14 @@ class CourseService:
             return sample_courses
         except Exception as e:
             raise Exception("Không thể lấy ngẫu nhiên học phần", e)
+
+    def get_course_detail_by_id(self, course_id: str):
+        try:
+            course_detail_result = self.course_repo.get_course_detail_by_id(course_id=course_id)
+
+            if not course_detail_result:
+                raise CoursesNotFoundError("Không có học phần")
+
+            return course_detail_result
+        except Exception as e:
+            raise Exception("Không thể thông tin học phần", e)

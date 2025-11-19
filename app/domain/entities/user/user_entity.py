@@ -54,7 +54,6 @@ class User:
         login_method: str,
         avatar_url: str = '/public/avatar_icon/owl.jpg',
     ) -> "User":
-        print("run here")
         return cls(
             _user_id=uuid7(),
             _username=username,

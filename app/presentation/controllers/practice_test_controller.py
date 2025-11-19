@@ -17,3 +17,15 @@ class PracticeTestController:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
             )
+
+    def get_practice_test_detail_by_id(self, practice_test_id: str):
+        try:
+            return self.service.get_practice_test_detail_by_id(
+                practice_test_id=practice_test_id
+            )
+        except PracticeTestsNotFoundError as e:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+        except Exception as e:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+            )

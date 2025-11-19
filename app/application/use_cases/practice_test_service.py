@@ -18,3 +18,18 @@ class PracticeTestService:
             return sample_practice_tests
         except Exception as e:
             raise Exception("Không thể lấy ngẫu nhiên bài kiểm tra thử", e)
+
+    def get_practice_test_detail_by_id(self, practice_test_id: str):
+        try:
+            practice_test_detail_resutl = (
+                self.practice_test_repo.get_practice_test_detail_by_id(
+                    practice_test_id=practice_test_id
+                )
+            )
+
+            if not practice_test_detail_resutl:
+                raise PracticeTestsNotFoundError("Không có bài kiểm tra thử")
+
+            return practice_test_detail_resutl
+        except Exception as e:
+            raise Exception("Không thể lấy thông tin chi tiết bài kiểm tra thử", e)
