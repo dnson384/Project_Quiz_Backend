@@ -31,6 +31,7 @@ class CoursesRepository(ICourseRepository):
                 self.db.query(
                     CourseModel.course_id,
                     CourseModel.course_name,
+                    UserModel.avatar_url,
                     UserModel.username,
                     UserModel.role,
                     func.count(CourseDetailModel.course_detail_id).label(
@@ -53,6 +54,7 @@ class CoursesRepository(ICourseRepository):
             db_results = (
                 query.group_by(
                     CourseModel.course_id,
+                    UserModel.avatar_url,
                     UserModel.username,
                     UserModel.role,
                     CourseModel.course_name,
@@ -67,6 +69,7 @@ class CoursesRepository(ICourseRepository):
                     CourseOutput(
                         course_id=row.course_id,
                         course_name=row.course_name,
+                        author_avatar_url=row.avatar_url,
                         author_username=row.username,
                         author_role=row.role,
                         num_of_terms=row.num_of_terms,
@@ -85,6 +88,7 @@ class CoursesRepository(ICourseRepository):
                 self.db.query(
                     CourseModel.course_id,
                     CourseModel.course_name,
+                    UserModel.avatar_url,
                     UserModel.username,
                     UserModel.role,
                     func.count(CourseDetailModel.course_detail_id).label(
@@ -98,6 +102,7 @@ class CoursesRepository(ICourseRepository):
                 )
                 .group_by(
                     CourseModel.course_id,
+                    UserModel.avatar_url,
                     UserModel.username,
                     UserModel.role,
                     CourseModel.course_name,
@@ -112,6 +117,7 @@ class CoursesRepository(ICourseRepository):
                     CourseOutput(
                         course_id=item.course_id,
                         course_name=item.course_name,
+                        author_avatar_url=item.avatar_url,
                         author_username=item.username,
                         author_role=item.role,
                         num_of_terms=item.num_of_terms,
@@ -130,6 +136,7 @@ class CoursesRepository(ICourseRepository):
                 self.db.query(
                     CourseModel.course_id,
                     CourseModel.course_name,
+                    UserModel.avatar_url,
                     UserModel.username,
                     UserModel.role,
                 )
@@ -151,6 +158,7 @@ class CoursesRepository(ICourseRepository):
             course_domain_result = CourseOutput(
                 course_id=course_query.course_id,
                 course_name=course_query.course_name,
+                author_avatar_url=course_query.avatar_url,
                 author_username=course_query.username,
                 author_role=course_query.role,
                 num_of_terms=len(detail_query),
