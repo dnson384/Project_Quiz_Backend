@@ -54,3 +54,21 @@ class CourseService:
             return {"course": course, "questions": questions}
         except Exception as e:
             raise Exception("Không thể tạo tính năng học", e)
+
+    def create_course_test_by_id(self, course_id: str):
+        try:
+            response = self.get_course_detail_by_id(course_id)
+            course = response.get("course")
+            course_detail = response.get("course_detail")
+            course_detail_random = random.sample(course_detail, 20)
+            questions = list(
+                map(
+                    lambda current_course: self.create_question(
+                        current_course, course_detail_random
+                    ),
+                    course_detail_random,
+                )
+            )
+            return {"course": course, "questions": questions}
+        except Exception as e:
+            raise Exception("Không thể tạo tính năng kiểm tra", e)
