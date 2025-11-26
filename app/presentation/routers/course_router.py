@@ -5,7 +5,7 @@ from app.presentation.controllers.course_controller import CourseController
 from app.presentation.schemas.course_schema import (
     CourseOutput,
     CourseWithDetailsOutput,
-    CourseLearnQuestionOutput,
+    CourseQuestionOutput,
 )
 from app.presentation.dependencies.dependencies import get_course_controller
 
@@ -30,10 +30,18 @@ def get_coures_detail_by_id(
 
 
 @router.get(
-    "/learn", response_model=CourseLearnQuestionOutput, status_code=status.HTTP_200_OK
+    "/learn", response_model=CourseQuestionOutput, status_code=status.HTTP_200_OK
 )
 def create_course_learn_by_id(
     course_id: str, controller: CourseController = Depends(get_course_controller)
 ):
     return controller.create_course_learn_by_id(course_id)
-    
+
+
+@router.get(
+    "/test", response_model=CourseQuestionOutput, status_code=status.HTTP_200_OK
+)
+def create_course_test_by_id(
+    course_id: str, controller: CourseController = Depends(get_course_controller)
+):
+    return controller.create_course_test_by_id(course_id)

@@ -32,6 +32,6 @@ class LearnQuestionOutput(TypedDict):
     options: List[CourseDetailOutput]
 
 
-class CourseLearnQuestionOutput(TypedDict):
+class CourseQuestionOutput(TypedDict):
     course: CourseOutput
     questions: List[LearnQuestionOutput]
