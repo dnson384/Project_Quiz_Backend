@@ -13,9 +13,9 @@ class QuestionDetailOutput(TypedDict):
     answer_option: List[AnswerOptionOutput]
 
 
-class CourseWithDetailsResponse(TypedDict):
+class PraceticeTestWithDetailsResponse(TypedDict):
     practice_test: PracticeTestOutput
-    question: List[QuestionDetailOutput]
+    questions: List[QuestionDetailOutput]
 
 
 class IPracticeTestRepository(ABC):
@@ -32,5 +32,5 @@ class IPracticeTestRepository(ABC):
     @abstractmethod
     def get_practice_test_detail_by_id(
         self, practice_test_id: str
-    ) -> CourseWithDetailsResponse:
+    ) -> PraceticeTestWithDetailsResponse:
         pass

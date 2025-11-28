@@ -1,4 +1,5 @@
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 from typing import List, Optional, TypedDict, Dict
 from uuid import UUID
 
@@ -77,8 +78,10 @@ class PracticeTestRepository(IPracticeTestRepository):
                     PracticeTestModel.practice_test_id,
                     PracticeTestModel.practice_test_name,
                     UserModel.username.label("author_username"),
+                    UserModel.avatar_url.label("author_avatar_url"),
                 )
                 .join(UserModel, UserModel.user_id == PracticeTestModel.user_id)
+                .order_by(func.random())
                 .limit(3)
                 .all()
             )
@@ -89,6 +92,7 @@ class PracticeTestRepository(IPracticeTestRepository):
                     PracticeTestOutput(
                         practice_test_id=item.practice_test_id,
                         practice_test_name=item.practice_test_name,
+                        author_avatar_url=item.author_avatar_url,
                         author_username=item.author_username,
                     )
                 )
@@ -105,6 +109,7 @@ class PracticeTestRepository(IPracticeTestRepository):
                 PracticeTestModel.practice_test_id,
                 PracticeTestModel.practice_test_name,
                 UserModel.username.label("author_username"),
+                UserModel.avatar_url.label("author_avatar_url"),
             )
             .filter(PracticeTestModel.practice_test_id == practice_test_id)
             .join(UserModel, UserModel.user_id == PracticeTestModel.user_id)
@@ -158,6 +163,7 @@ class PracticeTestRepository(IPracticeTestRepository):
         test_domain_result = PracticeTestOutput(
             practice_test_id=test_query.practice_test_id,
             practice_test_name=test_query.practice_test_name,
+            author_avatar_url=test_query.author_avatar_url,
             author_username=test_query.author_username,
         )
 
@@ -166,5 +172,5 @@ class PracticeTestRepository(IPracticeTestRepository):
         )
 
         return CourseWithDetails(
-            practice_test=test_domain_result, question=question_anwser_domain_result
+            practice_test=test_domain_result, questions=question_anwser_domain_result
         )
