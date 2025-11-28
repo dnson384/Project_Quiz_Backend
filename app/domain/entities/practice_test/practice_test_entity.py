@@ -69,4 +69,5 @@ class PracticeTest:
 class PracticeTestOutput:
     practice_test_id: UUID
     practice_test_name: str
+    author_avatar_url: str
     author_username: str
