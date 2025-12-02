@@ -4,7 +4,7 @@ from app.presentation.controllers.user_controller import UserController
 from app.presentation.schemas.user_schema import UserOut
 from app.presentation.dependencies.dependencies import get_user_controller
 
-router = APIRouter(prefix="/user", tags=["User"])
+router = APIRouter(prefix="/user", tags=["USER"])
 
 
 @router.get("/me", response_model=UserOut, status_code=status.HTTP_200_OK)

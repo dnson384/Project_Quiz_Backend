@@ -18,6 +18,10 @@ class IAuthService(ABC):
         pass
 
     @abstractmethod
+    def logout_user(self, refresh_token: str) -> bool:
+        pass
+
+    @abstractmethod
     def validate_access_token(self, access_token: str) -> Dict:
         pass
 

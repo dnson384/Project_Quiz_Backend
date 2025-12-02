@@ -1,7 +1,15 @@
 from fastapi import status, HTTPException
+from typing import List
 
 from app.domain.exceptions.practice_test_exception import PracticeTestsNotFoundError
 from app.application.use_cases.practice_test_service import PracticeTestService
+from app.presentation.schemas.practice_test_schema import (
+    PracticeTestOutput,
+    Question,
+    QuestionOptions,
+    PracticeTestQuestions,
+    PracticeTestDetailOutput,
+)
 
 
 class PracticeTestController:
@@ -18,10 +26,41 @@ class PracticeTestController:
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
             )
 
-    def get_practice_test_detail_by_id(self, practice_test_id: str):
+    def get_practice_test_detail_by_id(self, practice_test_id: str, count: int | None):
         try:
-            return self.service.get_practice_test_detail_by_id(
-                practice_test_id=practice_test_id
+            response = self.service.get_practice_test_detail_by_id(
+                practice_test_id=practice_test_id, count=count
+            )
+            practice_test = PracticeTestOutput(
+                practice_test_id=response.get("practice_test").practice_test_id,
+                practice_test_name=response.get("practice_test").practice_test_name,
+                author_avatar_url=response.get("practice_test").author_avatar_url,
+                author_username=response.get("practice_test").author_username,
+            )
+
+            questions: List[PracticeTestQuestions] = []
+            for question in response.get("questions"):
+                question_data = Question(
+                    question_id=question.get("question").question_id,
+                    question_text=question.get("question").question_text,
+                    question_type=question.get("question").question_type,
+                )
+                options_data: List[QuestionOptions] = []
+                for option in question.get("options"):
+                    options_data.append(
+                        QuestionOptions(
+                            option_id=option.option_id,
+                            option_text=option.option_text,
+                            is_correct=option.is_correct,
+                        )
+                    )
+
+                questions.append(
+                    PracticeTestQuestions(question=question_data, options=options_data)
+                )
+
+            return PracticeTestDetailOutput(
+                practice_test=practice_test, questions=questions
             )
         except PracticeTestsNotFoundError as e:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))

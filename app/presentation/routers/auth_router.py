@@ -6,7 +6,7 @@ from app.presentation.schemas.auth_schema import UserCreateEmail, UserLoginEmail
 from app.presentation.schemas.user_schema import UserResponse
 
 
-router = APIRouter(prefix="/auth", tags=["Auth"])
+router = APIRouter(prefix="/auth", tags=["AUTHENTICATION"])
 
 
 @router.post(
@@ -17,7 +17,6 @@ def register_user_email_endpoint(
 ):
     new_user = controller.register_user_email(user_in=user_in)
     return UserResponse(
-        message="Đăng ký thành công",
         user=new_user,
         access_token=None,
         refresh_token=None,
@@ -30,11 +29,18 @@ def login_user_email_endpoint(
 ):
     user_auth = controller.login_user_email(user_in=user_in)
     return UserResponse(
-        message="Đăng nhập thành công",
         user=user_auth.get("user_data"),
         access_token=user_auth.get("access_token"),
         refresh_token=user_auth.get("refresh_token"),
     )
+
+
+@router.post("/logout", status_code=status.HTTP_200_OK)
+def logout_user(
+    req: Request, controller: AuthController = Depends(get_auth_controller)
+):
+    refresh_token = req.headers["Authorization"].split(" ")[-1]
+    return controller.logout_user(refresh_token)
 
 
 @router.post("/refresh", status_code=status.HTTP_200_OK)

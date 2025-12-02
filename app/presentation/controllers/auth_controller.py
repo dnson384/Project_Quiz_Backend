@@ -46,6 +46,15 @@ class AuthController:
                 detail="Đã xảy ra lỗi không mong muốn.",
             )
 
+    def logout_user(self, refresh_token: str):
+        try:
+            return self.service.logout_user(refresh_token)
+        except Exception as e:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Đã xảy ra lỗi không mong muốn.",
+            )
+
     def re_generate_access_token(self, refresh_token: str):
         try:
             return self.service.refresh_access_token(refresh_token)

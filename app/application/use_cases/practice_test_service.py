@@ -19,11 +19,11 @@ class PracticeTestService:
         except Exception as e:
             raise Exception("Không thể lấy ngẫu nhiên bài kiểm tra thử", e)
 
-    def get_practice_test_detail_by_id(self, practice_test_id: str):
+    def get_practice_test_detail_by_id(self, practice_test_id: str, count: int | None):
         try:
             practice_test_detail_resutl = (
                 self.practice_test_repo.get_practice_test_detail_by_id(
-                    practice_test_id=practice_test_id
+                    practice_test_id=practice_test_id, count=count
                 )
             )
 
