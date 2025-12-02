@@ -31,6 +31,6 @@ class IPracticeTestRepository(ABC):
 
     @abstractmethod
     def get_practice_test_detail_by_id(
-        self, practice_test_id: str
+        self, practice_test_id: str, count: int | None
     ) -> PraceticeTestWithDetailsResponse:
         pass

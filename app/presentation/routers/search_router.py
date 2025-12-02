@@ -4,7 +4,7 @@ from app.presentation.controllers.search_controller import SearchController
 from app.presentation.dependencies.dependencies import get_search_controller
 from app.presentation.schemas.search_schema import SearchInput, SearchOutput
 
-router = APIRouter(prefix="/search", tags=["Search"])
+router = APIRouter(prefix="/search", tags=["SEARCH"])
 
 
 @router.get("/", response_model=SearchOutput, status_code=status.HTTP_200_OK)

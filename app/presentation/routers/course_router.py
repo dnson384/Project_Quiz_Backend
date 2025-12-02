@@ -9,11 +9,11 @@ from app.presentation.schemas.course_schema import (
 )
 from app.presentation.dependencies.dependencies import get_course_controller
 
-router = APIRouter(prefix="/course", tags=["Course"])
+router = APIRouter(prefix="/course", tags=["COURSE"])
 
 
 @router.get(
-    "/random-course", response_model=List[CourseOutput], status_code=status.HTTP_200_OK
+    "/random", response_model=List[CourseOutput], status_code=status.HTTP_200_OK
 )
 def get_random_courses(controller: CourseController = Depends(get_course_controller)):
     return controller.get_random_course()

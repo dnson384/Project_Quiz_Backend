@@ -105,6 +105,11 @@ class AuthService(IAuthService):
             "refresh_token": refresh_token,
         }
 
+    def logout_user(self, refresh_token) -> bool:
+        payload = self.security_service.decode_refresh_token(refresh_token)
+        jti = payload.get("jti")
+        return self.token_repo.revoke_refresh_token(jti)
+
     def validate_access_token(self, access_token: str) -> Dict:
         payload = self.security_service.decode_access_token(access_token)
         return payload

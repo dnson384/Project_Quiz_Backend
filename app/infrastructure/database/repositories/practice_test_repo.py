@@ -43,6 +43,7 @@ class PracticeTestRepository(IPracticeTestRepository):
                 self.db.query(
                     PracticeTestModel.practice_test_id,
                     PracticeTestModel.practice_test_name,
+                    UserModel.avatar_url,
                     UserModel.username,
                 )
                 .filter(PracticeTestModel.practice_test_name.ilike(f"%{keyword}%"))
@@ -62,6 +63,7 @@ class PracticeTestRepository(IPracticeTestRepository):
                     PracticeTestOutput(
                         practice_test_id=row.practice_test_id,
                         practice_test_name=row.practice_test_name,
+                        author_avatar_url=row.avatar_url,
                         author_username=row.username,
                     )
                 )
@@ -103,7 +105,7 @@ class PracticeTestRepository(IPracticeTestRepository):
             print("Có lỗi xảy ra khi lấy bài kiểm tra thử ngẫu nhiên", e)
             return []
 
-    def get_practice_test_detail_by_id(self, practice_test_id: str):
+    def get_practice_test_detail_by_id(self, practice_test_id: str, count: int):
         test_query = (
             self.db.query(
                 PracticeTestModel.practice_test_id,
@@ -115,6 +117,16 @@ class PracticeTestRepository(IPracticeTestRepository):
             .join(UserModel, UserModel.user_id == PracticeTestModel.user_id)
         ).first()
 
+        questions_id_query = (
+            self.db.query(PracticeTestQuestionModel.question_id)
+            .filter(PracticeTestQuestionModel.practice_test_id == practice_test_id)
+            .order_by(func.random())
+            .limit(count)
+            .all()
+        )
+
+        questions_id_list = [qid[0] for qid in questions_id_query]
+
         question_query = (
             self.db.query(
                 PracticeTestQuestionModel.question_id,
@@ -123,9 +135,6 @@ class PracticeTestRepository(IPracticeTestRepository):
                 AnswerOptionModel.option_id,
                 AnswerOptionModel.option_text,
                 AnswerOptionModel.is_correct,
-            )
-            .filter(
-                PracticeTestQuestionModel.practice_test_id == practice_test_id,
             )
             .join(
                 PracticeTestModel,
@@ -136,6 +145,7 @@ class PracticeTestRepository(IPracticeTestRepository):
                 AnswerOptionModel,
                 AnswerOptionModel.question_id == PracticeTestQuestionModel.question_id,
             )
+            .filter(PracticeTestQuestionModel.question_id.in_(questions_id_list))
             .all()
         )
 
@@ -149,10 +159,10 @@ class PracticeTestRepository(IPracticeTestRepository):
                         question_text=item.question_text,
                         question_type=item.question_type,
                     ),
-                    "answer_option": [],
+                    "options": [],
                 }
 
-            grouped_questions[item.question_id]["answer_option"].append(
+            grouped_questions[item.question_id]["options"].append(
                 AnswerOptionOutput(
                     option_id=item.option_id,
                     option_text=item.option_text,
