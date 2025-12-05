@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, status
+from uuid import UUID
 from typing import List
 
 from app.presentation.controllers.course_controller import CourseController
@@ -6,6 +7,9 @@ from app.presentation.schemas.course_schema import (
     CourseOutput,
     CourseWithDetailsOutput,
     CourseQuestionOutput,
+    NewCourseInput,
+    NewCourseDetailInput,
+    UpdateCourseRequest,
 )
 from app.presentation.dependencies.dependencies import get_course_controller
 
@@ -32,16 +36,60 @@ def get_coures_detail_by_id(
 @router.get(
     "/learn", response_model=CourseQuestionOutput, status_code=status.HTTP_200_OK
 )
-def create_course_learn_by_id(
+def get_course_learn_by_id(
     course_id: str, controller: CourseController = Depends(get_course_controller)
 ):
-    return controller.create_course_learn_by_id(course_id)
+    return controller.get_course_learn_by_id(course_id)
 
 
 @router.get(
     "/test", response_model=CourseQuestionOutput, status_code=status.HTTP_200_OK
 )
-def create_course_test_by_id(
+def get_course_test_by_id(
     course_id: str, controller: CourseController = Depends(get_course_controller)
 ):
-    return controller.create_course_test_by_id(course_id)
+    return controller.get_course_test_by_id(course_id)
+
+
+@router.post(
+    "/", response_model=CourseWithDetailsOutput, status_code=status.HTTP_201_CREATED
+)
+def create_new_course(
+    course_in: NewCourseInput,
+    detail_in: List[NewCourseDetailInput],
+    controller: CourseController = Depends(get_course_controller),
+):
+    return controller.create_new_course(course_in, detail_in)
+
+
+@router.put(
+    "/{course_id}",
+    response_model=CourseWithDetailsOutput,
+    status_code=status.HTTP_200_OK,
+)
+def update_course(
+    course_id: UUID,
+    payload: UpdateCourseRequest,
+    controller: CourseController = Depends(get_course_controller),
+):
+    return controller.update_course(course_id=course_id, payload=payload)
+
+
+@router.delete(
+    "/{course_id}/detail/{course_detail_id}",
+    response_model=bool,
+    status_code=status.HTTP_200_OK,
+)
+def delete_course_detail(
+    course_id: UUID,
+    course_detail_id: UUID,
+    controller: CourseController = Depends(get_course_controller),
+):
+    return controller.delete_course_detail(course_id, course_detail_id)
+
+
+@router.delete("/{course_id}", response_model=bool, status_code=status.HTTP_200_OK)
+def delete_course(
+    course_id: UUID, controller: CourseController = Depends(get_course_controller)
+):
+    return controller.delete_course(course_id)

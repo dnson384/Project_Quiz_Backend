@@ -1,6 +1,6 @@
 from pydantic import BaseModel, ConfigDict
 from uuid import UUID
-from typing import List, TypedDict
+from typing import List, TypedDict, Optional
 
 
 class CourseOutput(BaseModel):
@@ -35,3 +35,27 @@ class LearnQuestionOutput(TypedDict):
 class CourseQuestionOutput(TypedDict):
     course: CourseOutput
     questions: List[LearnQuestionOutput]
+
+
+# Tạo mới
+class NewCourseInput(BaseModel):
+    course_name: str
+    user_id: UUID
+
+
+class NewCourseDetailInput(BaseModel):
+    term: str
+    definition: str
+
+# Sửa
+class UpdateCourseInput(BaseModel):
+    course_name: str
+
+class UpdateCourseDetailInput(BaseModel):
+    course_detail_id: UUID | None
+    term: str
+    definition: str
+
+class UpdateCourseRequest(BaseModel):
+    course: Optional[UpdateCourseInput] = None
+    details: List[UpdateCourseDetailInput]

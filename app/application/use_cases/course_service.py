@@ -1,18 +1,55 @@
 import random
+from uuid import UUID
+from typing import List, TypedDict
+
+from app.domain.entities.course.course_entity import (
+    CreateNewCourseInput,
+    CourseOutput,
+    UpdateCourseInput,
+)
+from app.domain.entities.course.course_detail_entity import (
+    CreateNewCourseDetailInput,
+    CourseDetailOutput,
+    UpdateCourseDetailInput,
+)
+from app.domain.exceptions.course_exception import (
+    CoursesNotFoundErrorDomain,
+    CourseDetailsNotFoundErrorDomain,
+)
+
 from app.application.abstractions.course_abstraction import ICourseRepository
-from app.domain.exceptions.course_exception import CoursesNotFoundError
+from app.application.abstractions.user_abstraction import IUserRepository
+from app.application.dtos.course_dto import (
+    DTONewCourseDetailInput,
+    DTONewCourseInput,
+    DTOCourseOutput,
+    DTOCourseDetailOutput,
+    DTOCourseWithDetails,
+    DTOUpdateCourseRequest,
+)
+from app.application.exceptions import (
+    UserNotFoundError,
+    CourseNotFoundError,
+    CourseDetailNotFoundError,
+)
+
+
+class CourseWithDetails(TypedDict):
+    course: CourseOutput
+    course_detail: List[CourseDetailOutput]
 
 
 class CourseService:
-    def __init__(self, course_repo: ICourseRepository):
+    def __init__(self, course_repo: ICourseRepository, user_repo: IUserRepository):
         self.course_repo = course_repo
+        self.user_repo = user_repo
 
     def get_random_course(self):
         try:
             sample_courses = self.course_repo.get_random_courses()
 
             if not sample_courses:
-                raise CoursesNotFoundError("Không có học phần")
+                raise CourseNotFoundError("Không có học phần")
 
             return sample_courses
         except Exception as e:
@@ -25,7 +62,7 @@ class CourseService:
             )
 
             if not course_detail_result:
-                raise CoursesNotFoundError("Không có học phần")
+                raise CourseNotFoundError("Không có học phần")
 
             return course_detail_result
         except Exception as e:
@@ -37,7 +74,7 @@ class CourseService:
 
         return {"question": current_course, "options": random_items}
 
-    def create_course_learn_by_id(self, course_id: str):
+    def get_course_learn_by_id(self, course_id: str):
         try:
             response = self.get_course_detail_by_id(course_id)
             course = response.get("course")
@@ -55,7 +92,7 @@ class CourseService:
         except Exception as e:
             raise Exception("Không thể tạo tính năng học", e)
 
-    def create_course_test_by_id(self, course_id: str):
+    def get_course_test_by_id(self, course_id: str):
         try:
             response = self.get_course_detail_by_id(course_id)
             course = response.get("course")
@@ -72,3 +109,113 @@ class CourseService:
             return {"course": course, "questions": questions}
         except Exception as e:
             raise Exception("Không thể tạo tính năng kiểm tra", e)
+
+    def create_new_course(
+        self,
+        course_in: DTONewCourseInput,
+        detail_in: List[DTONewCourseDetailInput],
+    ):
+        try:
+            if not self.user_repo.get_user_by_id(course_in.user_id):
+                raise UserNotFoundError(
+                    f"User with ID {course_in.user_id} does not exist"
+                )
+
+            course_in_domain = CreateNewCourseInput(
+                course_name=course_in.course_name, user_id=course_in.user_id
+            )
+            detail_in_domain: List[CreateNewCourseDetailInput] = []
+            for detail in detail_in:
+                detail_in_domain.append(
+                    CreateNewCourseDetailInput(
+                        term=detail.term, definition=detail.definition
+                    )
+                )
+
+            response: CourseWithDetails = self.course_repo.create_new_course(
+                course_in_domain, detail_in_domain
+            )
+
+            dto_course = DTOCourseOutput(
+                course_id=response.get("course").course_id,
+                course_name=response.get("course").course_name,
+                author_avatar_url=response.get("course").author_avatar_url,
+                author_username=response.get("course").author_username,
+                author_role=response.get("course").author_role,
+                num_of_terms=response.get("course").num_of_terms,
+            )
+
+            dto_detail: List[DTOCourseDetailOutput] = []
+            for detail in response.get("course_detail"):
+                dto_detail.append(
+                    DTOCourseDetailOutput(
+                        course_detail_id=detail.course_detail_id,
+                        term=detail.term,
+                        definition=detail.definition,
+                    )
+                )
+
+            return DTOCourseWithDetails(course=dto_course, course_detail=dto_detail)
+        except Exception as e:
+            raise Exception("Không thể thêm mới học phần - service", e)
+
+    def update_course(self, course_id: UUID, payload: DTOUpdateCourseRequest):
+        try:
+            self.course_repo.get_course_by_id(course_id)
+        except:
+            raise CourseNotFoundError("Học phần không tồn tại")
+
+        try:
+            if payload.course:
+                self.course_repo.update_course(
+                    course_id=course_id,
+                    course_in=UpdateCourseInput(course_name=payload.course.course_name),
+                )
+        except Exception as e:
+            raise Exception("Lỗi khi cập nhật tên học phần", e)
+
+        try:
+            for detail in payload.details:
+                if detail.course_detail_id:
+                    self.course_repo.update_course_detail(
+                        course_id=course_id,
+                        detail_in=UpdateCourseDetailInput(
+                            course_detail_id=detail.course_detail_id,
+                            term=detail.term,
+                            definition=detail.definition,
+                        ),
+                    )
+
+                else:
+                    self.course_repo.create_new_course_detail(
+                        course_id=course_id,
+                        detail_in=UpdateCourseDetailInput(
+                            course_detail_id=detail.course_detail_id,
+                            term=detail.term,
+                            definition=detail.definition,
+                        ),
+                    )
+        except Exception as e:
+            raise Exception("Lỗi khi cập nhật chi tiết học phần", e)
+        return self.get_course_detail_by_id(course_id=course_id)
+
+    def delete_course_detail(self, course_id: UUID, course_detail_id: UUID) -> bool:
+        try:
+            self.course_repo.get_course_by_id(course_id)
+        except:
+            raise CourseNotFoundError("Không tồn tại học phần")
+
+        try:
+            return self.course_repo.delete_course_detail(course_id, course_detail_id)
+        except CourseDetailsNotFoundErrorDomain as e:
+            raise CourseDetailNotFoundError(str(e))
+        except Exception as e:
+            raise Exception("SERVICE - Không thể xoá chi tiết học phần", e)
+
+    def delete_course(self, course_id: UUID):
+        try:
+            return self.course_repo.delete_course(course_id)
+        except CoursesNotFoundErrorDomain as e:
+            raise CourseNotFoundError(str(e))
+        except Exception as e:
+            raise Exception("SERVICE - Không thể xoá học phần", e)
