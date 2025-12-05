@@ -27,8 +27,8 @@ class Course:
     @classmethod
     def create_new_course(
         cls,
-        user_id: UUID,
         course_name: str,
+        user_id: UUID,
     ) -> "Course":
         return cls(
             _course_id=uuid7(),
@@ -80,3 +80,14 @@ class CourseOutput:
     author_username: str
     author_role: str
     num_of_terms: int
+
+
+@dataclass(frozen=True)
+class CreateNewCourseInput:
+    course_name: str
+    user_id: UUID
+
+
+@dataclass(frozen=True)
+class UpdateCourseInput:
+    course_name: str

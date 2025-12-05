@@ -1,8 +1,17 @@
 from abc import ABC, abstractmethod
+from uuid import UUID
 from typing import List, Optional, TypedDict
 
-from app.domain.entities.course.course_entity import CourseOutput
-from app.domain.entities.course.course_detail_entity import CourseDetailOutput
+from app.domain.entities.course.course_entity import (
+    CourseOutput,
+    CreateNewCourseInput,
+    UpdateCourseInput,
+)
+from app.domain.entities.course.course_detail_entity import (
+    CourseDetailOutput,
+    CreateNewCourseDetailInput,
+    UpdateCourseDetailInput,
+)
 
 
 class CourseWithDetailsResponse(TypedDict):
@@ -22,5 +31,39 @@ class ICourseRepository(ABC):
         pass
 
     @abstractmethod
+    def get_course_by_id(self, course_id: UUID) -> CourseOutput:
+        pass
+
+    @abstractmethod
     def get_course_detail_by_id(self, course_id: str) -> CourseWithDetailsResponse:
+        pass
+
+    @abstractmethod
+    def create_new_course(
+        self,
+        course_in: CreateNewCourseInput,
+        detail_in: List[CreateNewCourseDetailInput],
+    ):
+        pass
+
+    @abstractmethod
+    def create_new_course_detail(
+        self, course_id: UUID, detail_in: CreateNewCourseDetailInput
+    ):
+        pass
+
+    @abstractmethod
+    def update_course_detail(self, course_id: UUID, detail_in: UpdateCourseDetailInput):
+        pass
+
+    @abstractmethod
+    def update_course(self, course_id: UUID, course_in: UpdateCourseInput):
+        pass
+
+    @abstractmethod
+    def delete_course_detail(self, course_id: UUID, course_detail_id: UUID):
+        pass
+
+    @abstractmethod
+    def delete_course(self, course_id: UUID):
         pass

@@ -74,8 +74,9 @@ def get_user_controller(
 
 def get_course_service(
     course_repo: ICourseRepository = Depends(get_course_repo),
+    user_repo: IUserRepository = Depends(get_user_repo),
 ) -> CourseService:
-    return CourseService(course_repo)
+    return CourseService(course_repo, user_repo)
 
 
 def get_course_controller(

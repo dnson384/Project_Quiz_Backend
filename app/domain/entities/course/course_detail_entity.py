@@ -72,8 +72,19 @@ class CourseDetail:
         if not definition:
             raise ValueError("Không có định nghĩa")
 
-@dataclass
+@dataclass(frozen=True)
 class CourseDetailOutput:
     course_detail_id: str
+    term: str
+    definition: str
+
+@dataclass(frozen=True)
+class CreateNewCourseDetailInput:
+    term: str
+    definition: str
+
+@dataclass(frozen=True)
+class UpdateCourseDetailInput:
+    course_detail_id: UUID
     term: str
     definition: str
