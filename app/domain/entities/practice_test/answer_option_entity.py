@@ -77,3 +77,9 @@ class AnswerOptionOutput:
     option_id: UUID
     option_text: str
     is_correct: bool
+
+
+@dataclass(frozen=True)
+class NewAnswerOptionInput:
+    option_text: str
+    is_correct: bool

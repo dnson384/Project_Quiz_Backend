@@ -43,7 +43,7 @@ class ICourseRepository(ABC):
         self,
         course_in: CreateNewCourseInput,
         detail_in: List[CreateNewCourseDetailInput],
-    ):
+    ) -> CourseWithDetailsResponse:
         pass
 
     @abstractmethod

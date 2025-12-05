@@ -25,6 +25,9 @@ class PracticeTestQuestion:
     def create_new_question(
         cls, practice_test_id: UUID, question_text: str, question_type: str
     ) -> "PracticeTestQuestion":
+        if not question_type in ["MULTIPLE_CHOICE", "TRUE_FALSE"]:
+            raise ValueError("Giá trị loại câu hỏi không hợp lệ")
+
         return cls(
             _question_id=uuid7(),
             _practice_test_id=practice_test_id,
@@ -80,5 +83,11 @@ class PracticeTestQuestion:
 @dataclass(frozen=True)
 class QuestionOutput:
     question_id: UUID
+    question_text: str
+    question_type: str
+
+
+@dataclass(frozen=True)
+class NewQuestionBaseInput:
     question_text: str
     question_type: str

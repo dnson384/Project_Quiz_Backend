@@ -19,6 +19,7 @@ from app.domain.exceptions.course_exception import (
     CoursesNotFoundErrorDomain,
     CourseDetailsNotFoundErrorDomain,
 )
+from app.domain.exceptions.user_exceptions import UserNotFoundErrorDomain
 
 from app.application.abstractions.course_abstraction import ICourseRepository
 
@@ -236,7 +237,7 @@ class CoursesRepository(ICourseRepository):
         self,
         course_in: CreateNewCourseInput,
         detail_in: List[CreateNewCourseDetailInput],
-    ):
+    ) -> CourseWithDetails:
         new_course_domain = Course.create_new_course(
             course_name=course_in.course_name, user_id=course_in.user_id
         )
@@ -250,7 +251,15 @@ class CoursesRepository(ICourseRepository):
                 )
             )
 
-        response = {}
+        current_user = (
+            self.db.query(UserModel.avatar_url, UserModel.username, UserModel.role)
+            .filter(UserModel.user_id == new_course_domain.user_id)
+            .first()
+        )
+
+        if not current_user:
+            raise UserNotFoundErrorDomain("Không tồn tại người dùng")
+
         try:
             new_course_model = CourseModel(
                 course_id=new_course_domain.course_id,
@@ -259,28 +268,14 @@ class CoursesRepository(ICourseRepository):
                 created_at=new_course_domain.created_at,
                 updated_at=new_course_domain.updated_at,
             )
+
             self.db.add(new_course_model)
             self.db.commit()
             self.db.refresh(new_course_model)
-
-            current_user = (
-                self.db.query(UserModel.avatar_url, UserModel.username, UserModel.role)
-                .filter(UserModel.user_id == new_course_model.user_id)
-                .first()
-            )
-
-            response["course"] = CourseOutput(
-                course_id=new_course_model.course_id,
-                course_name=new_course_model.course_name,
-                author_avatar_url=current_user.avatar_url,
-                author_username=current_user.username,
-                author_role=current_user.role,
-                num_of_terms=0,
-            )
         except Exception as e:
-            print("Lỗi xảy ra khi thêm course")
             self.db.rollback()
-            return None
+            print("Lỗi xảy ra khi thêm course")
+            raise e
 
         try:
             new_detail_model: List[CourseDetailModel] = []
@@ -296,19 +291,29 @@ class CoursesRepository(ICourseRepository):
 
             self.db.add_all(new_detail_model)
             self.db.commit()
-            response["course_detail"] = [
+        except Exception as e:
+            self.db.rollback()
+            print("Lỗi xảy ra khi thêm course detail")
+            raise e
+
+        return CourseWithDetails(
+            course=CourseOutput(
+                course_id=new_course_model.course_id,
+                course_name=new_course_model.course_name,
+                author_avatar_url=current_user.avatar_url,
+                author_username=current_user.username,
+                author_role=current_user.role,
+                num_of_terms=len(new_detail_model),
+            ),
+            course_detail=[
                 CourseDetailOutput(
                     course_detail_id=detail.course_detail_id,
                     term=detail.term,
                     definition=detail.definition,
                 )
                 for detail in new_detail_model
-            ]
-        except Exception as e:
-            print("Lỗi xảy ra khi thêm course detail")
-            self.db.rollback()
-            return None
-        return response
+            ],
+        )
 
     # Sửa
     def create_new_course_detail(
@@ -385,7 +390,9 @@ class CoursesRepository(ICourseRepository):
             )
 
             if not current_detail:
-                raise CourseDetailsNotFoundErrorDomain("Không tồn tại chi tiết học phần")
+                raise CourseDetailsNotFoundErrorDomain(
+                    "Không tồn tại chi tiết học phần"
+                )
 
             self.db.delete(current_detail)
             self.db.commit()
@@ -397,7 +404,11 @@ class CoursesRepository(ICourseRepository):
 
     def delete_course(self, course_id: UUID):
         try:
-            current_course = self.db.query(CourseModel).filter(CourseModel.course_id == course_id).first()
+            current_course = (
+                self.db.query(CourseModel)
+                .filter(CourseModel.course_id == course_id)
+                .first()
+            )
 
             if not current_course:
                 raise CoursesNotFoundErrorDomain("Không tồn tại học phần")

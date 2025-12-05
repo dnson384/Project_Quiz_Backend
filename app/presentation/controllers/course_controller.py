@@ -204,7 +204,7 @@ class CourseController:
                     for detail in detail_res
                 ],
             )
-        except CoursesNotFoundError as e:
+        except CourseNotFoundError as e:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
         except Exception as e:
             raise HTTPException(
