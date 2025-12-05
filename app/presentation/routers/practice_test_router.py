@@ -5,6 +5,7 @@ from app.presentation.controllers.practice_test_controller import PracticeTestCo
 from app.presentation.schemas.practice_test_schema import (
     PracticeTestOutput,
     PracticeTestDetailOutput,
+    NewPracticeTestInput
 )
 from app.presentation.dependencies.dependencies import get_practice_test_controller
 
@@ -33,3 +34,7 @@ def get_random_courses(
     return controller.get_practice_test_detail_by_id(
         practice_test_id=practice_test_id, count=count
     )
+
+@router.post("/", status_code=status.HTTP_201_CREATED)
+def create_new_practice_test(payload: NewPracticeTestInput, controller: PracticeTestController = Depends(get_practice_test_controller)):
+    return controller.create_new_practice_test(payload)

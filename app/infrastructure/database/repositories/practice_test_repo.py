@@ -3,6 +3,22 @@ from sqlalchemy import func
 from typing import List, Optional, TypedDict, Dict
 from uuid import UUID
 
+from app.domain.entities.practice_test.practice_test_entity import (
+    PracticeTest,
+    PracticeTestOutput,
+    NewPracticeTestBaseInfoInput,
+)
+from app.domain.entities.practice_test.practice_test_question_entity import (
+    PracticeTestQuestion,
+    QuestionOutput,
+    NewQuestionBaseInput,
+)
+from app.domain.entities.practice_test.answer_option_entity import (
+    AnswerOption,
+    AnswerOptionOutput,
+    NewAnswerOptionInput,
+)
+
 from app.infrastructure.database.models.practice_test_model import (
     PracticeTestModel,
     PracticeTestQuestionModel,
@@ -13,13 +29,6 @@ from app.infrastructure.database.models.user_model import UserModel
 from app.application.abstractions.practice_test_abstraction import (
     IPracticeTestRepository,
 )
-from app.domain.entities.practice_test.practice_test_entity import (
-    PracticeTestOutput,
-)
-from app.domain.entities.practice_test.practice_test_question_entity import (
-    QuestionOutput,
-)
-from app.domain.entities.practice_test.answer_option_entity import AnswerOptionOutput
 
 
 class QuestionDetailOutput(TypedDict):
@@ -29,6 +38,16 @@ class QuestionDetailOutput(TypedDict):
 class CourseWithDetails(TypedDict):
     practice_test: PracticeTestOutput
     question: QuestionDetailOutput
+
+
+class NewQuestionInput(TypedDict):
+    question: NewQuestionBaseInput
+    options: List[NewAnswerOptionInput]
+
+
+class NewPracticeTestInput(TypedDict):
+    base_info: NewPracticeTestBaseInfoInput
+    questions: List[NewQuestionInput]
 
 
 class PracticeTestRepository(IPracticeTestRepository):
@@ -184,3 +203,71 @@ class PracticeTestRepository(IPracticeTestRepository):
         return CourseWithDetails(
             practice_test=test_domain_result, questions=question_anwser_domain_result
         )
+
+    def create_new_practice_test(self, payload: NewPracticeTestInput):
+        new_practice_test_domain = PracticeTest.create_new_practice_test(
+            user_id=payload.get("base_info").user_id,
+            practice_test_name=payload.get("base_info").practice_test_name,
+        )
+
+        new_questions_domain: List[PracticeTestQuestion] = []
+        new_options_domain: List[AnswerOption] = []
+        for question_payload in payload.get("questions"):
+            new_question_domain = PracticeTestQuestion.create_new_question(
+                practice_test_id=new_practice_test_domain.practice_test_id,
+                question_text=question_payload.get("question").question_text,
+                question_type=question_payload.get("question").question_type,
+            )
+
+            new_questions_domain.append(new_question_domain)
+
+            for option_payload in question_payload.get("options"):
+                new_options_domain.append(
+                    AnswerOption.create_new_answer_option(
+                        question_id=new_question_domain.question_id,
+                        option_text=option_payload.option_text,
+                        is_correct=option_payload.is_correct,
+                    )
+                )
+
+        try:
+            # Thêm base info
+            new_practice_test_model = PracticeTestModel(
+                practice_test_id=new_practice_test_domain.practice_test_id,
+                user_id=new_practice_test_domain.user_id,
+                practice_test_name=new_practice_test_domain.practice_test_name,
+                created_at=new_practice_test_domain.created_at,
+                updated_at=new_practice_test_domain.updated_at,
+            )
+
+            self.db.add(new_practice_test_model)
+
+            # Thêm câu hỏi
+            new_questions_model = [
+                PracticeTestQuestionModel(
+                    question_id=question_domain.question_id,
+                    practice_test_id=question_domain.practice_test_id,
+                    question_text=question_domain.question_text,
+                    question_type=question_domain.question_type,
+                )
+                for question_domain in new_questions_domain
+            ]
+            self.db.add_all(new_questions_model)
+
+            # Thêm options
+            new_options_model = [
+                AnswerOptionModel(
+                    option_id=option_domain.option_id,
+                    question_id=option_domain.question_id,
+                    option_text=option_domain.option_text,
+                    is_correct=option_domain.is_correct,
+                )
+                for option_domain in new_options_domain
+            ]
+            self.db.add_all(new_options_model)
+            self.db.commit()
+            return new_practice_test_model.practice_test_id
+        except Exception as e:
+            print("Lỗi khi thêm bài kiểm tra thử mới", e)
+            self.db.rollback()
+            raise e

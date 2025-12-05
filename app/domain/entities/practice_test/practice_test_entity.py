@@ -71,3 +71,9 @@ class PracticeTestOutput:
     practice_test_name: str
     author_avatar_url: str
     author_username: str
+
+
+@dataclass(frozen=True)
+class NewPracticeTestBaseInfoInput:
+    practice_test_name: str
+    user_id: UUID

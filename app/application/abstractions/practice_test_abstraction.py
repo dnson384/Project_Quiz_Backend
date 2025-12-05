@@ -1,11 +1,18 @@
 from abc import ABC, abstractmethod
 from typing import List, Optional, TypedDict
 
-from app.domain.entities.practice_test.practice_test_entity import PracticeTestOutput
+from app.domain.entities.practice_test.practice_test_entity import (
+    PracticeTestOutput,
+    NewPracticeTestBaseInfoInput,
+)
 from app.domain.entities.practice_test.practice_test_question_entity import (
     QuestionOutput,
+    NewQuestionBaseInput,
 )
-from app.domain.entities.practice_test.answer_option_entity import AnswerOptionOutput
+from app.domain.entities.practice_test.answer_option_entity import (
+    AnswerOptionOutput,
+    NewAnswerOptionInput,
+)
 
 
 class QuestionDetailOutput(TypedDict):
@@ -16,6 +23,16 @@ class QuestionDetailOutput(TypedDict):
 class PraceticeTestWithDetailsResponse(TypedDict):
     practice_test: PracticeTestOutput
     questions: List[QuestionDetailOutput]
+
+
+class NewQuestionInput(TypedDict):
+    question: NewQuestionBaseInput
+    options: List[NewAnswerOptionInput]
+
+
+class NewPracticeTestInput(TypedDict):
+    base_info: NewPracticeTestBaseInfoInput
+    questions: List[NewQuestionInput]
 
 
 class IPracticeTestRepository(ABC):
@@ -33,4 +50,8 @@ class IPracticeTestRepository(ABC):
     def get_practice_test_detail_by_id(
         self, practice_test_id: str, count: int | None
     ) -> PraceticeTestWithDetailsResponse:
+        pass
+
+    @abstractmethod
+    def create_new_practice_test(self, payload: NewPracticeTestInput):
         pass
