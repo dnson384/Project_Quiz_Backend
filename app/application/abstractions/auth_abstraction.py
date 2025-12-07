@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from typing import Dict
 
 from app.domain.entities.user.user_entity import (
-    CreateNewUserEmailInput,
+    NewUserEmailInput,
     LoginUserEmailInput,
     User,
 )
@@ -10,7 +10,7 @@ from app.domain.entities.user.user_entity import (
 
 class IAuthService(ABC):
     @abstractmethod
-    def register_user_email(self, user_in: CreateNewUserEmailInput) -> User:
+    def register_user_email(self, user_in: NewUserEmailInput):
         pass
 
     @abstractmethod

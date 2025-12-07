@@ -14,16 +14,16 @@ class LoginMethod(str, Enum):
 
 # Schema đăng ký
 class UserCreateEmail(BaseModel):
-    email: EmailStr = Field(max_length=255)
-    username: str = Field(max_length=255)
-    plain_password: str = Field(min_length=8, max_length=64)
+    email: str
+    username: str
+    plain_password: str
     role: UserRole
 
 
 # Schema đăng nhập
 class UserLoginEmail(BaseModel):
-    email: EmailStr = Field(max_length=255)
-    plain_password: str = Field(min_length=8, max_length=64)
+    email: EmailStr
+    plain_password: str
 
 
 class Token(BaseModel):

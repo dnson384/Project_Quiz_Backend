@@ -61,24 +61,7 @@ class SecurityServiceImpl(ISecurityService):
             raise credentials_exception
 
     def create_refresh_token(self, payload: Dict[str, Any]) -> str:
-        # JWT Id
-        jti = str(uuid7())
-        refresh_payload = {
-            "jti": jti,
-            "sub": payload.get("sub"),
-            "role": payload.get("role"),
-        }
-        # Thời hạn của token
-        expire = datetime.now(timezone.utc) + timedelta(days=30)
-        # Thời điểm tạo token
-        issued_at = datetime.now(timezone.utc)
-
-        refresh_payload.update(
-            {"exp": int(expire.timestamp()), "iat": int(issued_at.timestamp())}
-        )
-        encoded_jwt = jwt.encode(
-            refresh_payload, settings.JWT_REFRESH, algorithm="HS256"
-        )
+        encoded_jwt = jwt.encode(payload, settings.JWT_REFRESH, algorithm="HS256")
         return encoded_jwt
 
     def decode_refresh_token(self, token: str) -> Dict[str, Any]:

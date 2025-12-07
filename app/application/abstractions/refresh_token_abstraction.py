@@ -1,12 +1,14 @@
 from abc import ABC, abstractmethod
 from uuid import UUID
 
-from app.domain.entities.token.refresh_token_entity import RefreshToken
+from app.domain.entities.token.refresh_token_entity import (
+    RefreshToken,
+)
 
 
 class IRefreshTokenRepository(ABC):
     @abstractmethod
-    def save_refresh_token_jti(self, payload: RefreshToken) -> RefreshToken:
+    def save_refresh_token(self, payload: RefreshToken):
         pass
 
     @abstractmethod
