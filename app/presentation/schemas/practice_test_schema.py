@@ -44,7 +44,6 @@ class PracticeTestDetailOutput(BaseModel):
 
 class BaseInfoInput(BaseModel):
     practice_test_name: str
-    user_id: UUID
 
 
 class QuestionBaseInput(BaseModel):

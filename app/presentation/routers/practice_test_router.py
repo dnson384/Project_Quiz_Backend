@@ -46,9 +46,10 @@ def get_detail(
 )
 def create_new_practice_test(
     payload: NewPracticeTestInput,
+    user_id: UUID = Depends(get_current_user),
     controller: PracticeTestController = Depends(get_practice_test_controller),
 ):
-    return controller.create_new_practice_test(payload)
+    return controller.create_new_practice_test(user_id, payload)
 
 
 @router.put("/{practice_test_id}", status_code=status.HTTP_200_OK)
