@@ -28,6 +28,7 @@ from app.application.dtos.course_dto import (
     DTOUpdateCourseRequest,
 )
 from app.application.exceptions import (
+    UserNotAllowError,
     UserNotFoundError,
     CourseNotFoundError,
     CourseDetailNotFoundError,
@@ -159,11 +160,17 @@ class CourseService:
         except Exception as e:
             raise Exception("Không thể thêm mới học phần - service", e)
 
-    def update_course(self, course_id: UUID, payload: DTOUpdateCourseRequest):
+    def check_user_course(self, user_id: UUID, course_id: UUID):
         try:
-            self.course_repo.get_course_by_id(course_id)
-        except:
-            raise CourseNotFoundError("Học phần không tồn tại")
+            if not self.course_repo.check_user_course(user_id, course_id):
+                raise UserNotAllowError()
+        except CoursesNotFoundErrorDomain as e:
+            raise CourseNotFoundError(str(e))
+
+    def update_course(
+        self, user_id: UUID, course_id: UUID, payload: DTOUpdateCourseRequest
+    ):
+        self.check_user_course(user_id, course_id)
 
         try:
             if payload.course:
@@ -199,23 +206,12 @@ class CourseService:
             raise Exception("Lỗi khi cập nhật chi tiết học phần", e)
         return self.get_course_detail_by_id(course_id=course_id)
 
-    def delete_course_detail(self, course_id: UUID, course_detail_id: UUID) -> bool:
-        try:
-            self.course_repo.get_course_by_id(course_id)
-        except:
-            raise CourseNotFoundError("Không tồn tại học phần")
+    def delete_course_detail(
+        self, user_id: UUID, course_id: UUID, course_detail_id: UUID
+    ) -> bool:
+        self.check_user_course(user_id, course_id)
+        return self.course_repo.delete_course_detail(course_id, course_detail_id)
 
-        try:
-            return self.course_repo.delete_course_detail(course_id, course_detail_id)
-        except CourseDetailsNotFoundErrorDomain as e:
-            raise CourseDetailNotFoundError(str(e))
-        except Exception as e:
-            raise Exception("SERVICE - Không thể xoá chi tiết học phần", e)
-
-    def delete_course(self, course_id: UUID):
-        try:
-            return self.course_repo.delete_course(course_id)
-        except CoursesNotFoundErrorDomain as e:
-            raise CourseNotFoundError(str(e))
-        except Exception as e:
-            raise Exception("SERVICE - Không thể xoá học phần", e)
+    def delete_course(self, user_id: UUID, course_id: UUID):
+        self.check_user_course(user_id, course_id)
+        return self.course_repo.delete_course(course_id)

@@ -11,7 +11,10 @@ from app.presentation.schemas.course_schema import (
     NewCourseDetailInput,
     UpdateCourseRequest,
 )
-from app.presentation.dependencies.dependencies import get_course_controller
+from app.presentation.dependencies.dependencies import (
+    get_course_controller,
+    get_current_user,
+)
 
 router = APIRouter(prefix="/course", tags=["COURSE"])
 
@@ -57,9 +60,10 @@ def get_course_test_by_id(
 def create_new_course(
     course_in: NewCourseInput,
     detail_in: List[NewCourseDetailInput],
+    user_id: UUID = Depends(get_current_user),
     controller: CourseController = Depends(get_course_controller),
 ):
-    return controller.create_new_course(course_in, detail_in)
+    return controller.create_new_course(user_id, course_in, detail_in)
 
 
 @router.put(
@@ -70,9 +74,10 @@ def create_new_course(
 def update_course(
     course_id: UUID,
     payload: UpdateCourseRequest,
+    user_id: UUID = Depends(get_current_user),
     controller: CourseController = Depends(get_course_controller),
 ):
-    return controller.update_course(course_id=course_id, payload=payload)
+    return controller.update_course(user_id, course_id, payload)
 
 
 @router.delete(
@@ -83,13 +88,16 @@ def update_course(
 def delete_course_detail(
     course_id: UUID,
     course_detail_id: UUID,
+    user_id: UUID = Depends(get_current_user),
     controller: CourseController = Depends(get_course_controller),
 ):
-    return controller.delete_course_detail(course_id, course_detail_id)
+    return controller.delete_course_detail(user_id, course_id, course_detail_id)
 
 
 @router.delete("/{course_id}", response_model=bool, status_code=status.HTTP_200_OK)
 def delete_course(
-    course_id: UUID, controller: CourseController = Depends(get_course_controller)
+    course_id: UUID,
+    user_id: UUID = Depends(get_current_user),
+    controller: CourseController = Depends(get_course_controller),
 ):
-    return controller.delete_course(course_id)
+    return controller.delete_course(user_id, course_id)

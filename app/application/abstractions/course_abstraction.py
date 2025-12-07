@@ -31,7 +31,7 @@ class ICourseRepository(ABC):
         pass
 
     @abstractmethod
-    def get_course_by_id(self, course_id: UUID) -> CourseOutput:
+    def check_user_course(self, user_ud: UUID, course_id: UUID):
         pass
 
     @abstractmethod
