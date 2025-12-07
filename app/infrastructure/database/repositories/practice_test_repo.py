@@ -1,22 +1,31 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload, joinedload
 from sqlalchemy import func
 from typing import List, Optional, TypedDict, Dict
 from uuid import UUID
+from dataclasses import dataclass
 
 from app.domain.entities.practice_test.practice_test_entity import (
     PracticeTest,
     PracticeTestOutput,
-    NewPracticeTestBaseInfoInput,
+    NewBaseInfoInput,
+    UpdateBaseInfoInput,
 )
 from app.domain.entities.practice_test.practice_test_question_entity import (
     PracticeTestQuestion,
     QuestionOutput,
     NewQuestionBaseInput,
+    UpdateQuestionBaseInput,
 )
 from app.domain.entities.practice_test.answer_option_entity import (
     AnswerOption,
     AnswerOptionOutput,
     NewAnswerOptionInput,
+    UpdateAnswerOptionInput,
+)
+from app.domain.exceptions.practice_test_exception import (
+    PracticeTestsNotFoundErrorDomain,
+    QuestionNotFoundErrorDomain,
+    OptionNotFoundErrorDomain,
 )
 
 from app.infrastructure.database.models.practice_test_model import (
@@ -25,29 +34,42 @@ from app.infrastructure.database.models.practice_test_model import (
     AnswerOptionModel,
 )
 from app.infrastructure.database.models.user_model import UserModel
+from app.infrastructure.mappers import Mapper
 
 from app.application.abstractions.practice_test_abstraction import (
     IPracticeTestRepository,
 )
 
 
-class QuestionDetailOutput(TypedDict):
+@dataclass(frozen=True)
+class QuestionDetailOutput:
     question: QuestionOutput
+    options: List[AnswerOptionOutput]
 
 
-class CourseWithDetails(TypedDict):
-    practice_test: PracticeTestOutput
-    question: QuestionDetailOutput
+@dataclass(frozen=True)
+class PraceticeTestWithDetailsResponse:
+    base_info: PracticeTestOutput
+    questions: List[QuestionDetailOutput]
 
 
-class NewQuestionInput(TypedDict):
+@dataclass(frozen=True)
+class NewQuestionInput:
     question: NewQuestionBaseInput
     options: List[NewAnswerOptionInput]
 
 
-class NewPracticeTestInput(TypedDict):
-    base_info: NewPracticeTestBaseInfoInput
+@dataclass(frozen=True)
+class NewPracticeTestInput:
+    base_info: NewBaseInfoInput
     questions: List[NewQuestionInput]
+
+
+@dataclass(frozen=True)
+class UpdateQuestionInput:
+    question_id: Optional[UUID]
+    question_base: UpdateQuestionBaseInput
+    options: List[UpdateAnswerOptionInput]
 
 
 class PracticeTestRepository(IPracticeTestRepository):
@@ -124,7 +146,24 @@ class PracticeTestRepository(IPracticeTestRepository):
             print("Có lỗi xảy ra khi lấy bài kiểm tra thử ngẫu nhiên", e)
             return []
 
-    def get_practice_test_detail_by_id(self, practice_test_id: str, count: int):
+    def check_user_practice_test(self, user_id: UUID, practice_test_id: UUID) -> bool:
+        if (
+            not self.db.query(PracticeTestModel)
+            .filter(PracticeTestModel.practice_test_id == practice_test_id)
+            .first()
+        ):
+            raise PracticeTestsNotFoundErrorDomain("Không tìm thấy bài kiểm tra thử")
+        return (
+            self.db.query(PracticeTestModel)
+            .join(UserModel, PracticeTestModel.practice_test_user)
+            .filter(UserModel.user_id == user_id)
+            .filter(PracticeTestModel.practice_test_id == practice_test_id)
+            .first()
+        )
+
+    def get_practice_test_detail_by_id(
+        self, practice_test_id: str, count: int
+    ) -> PraceticeTestWithDetailsResponse:
         test_query = (
             self.db.query(
                 PracticeTestModel.practice_test_id,
@@ -136,6 +175,18 @@ class PracticeTestRepository(IPracticeTestRepository):
             .join(UserModel, UserModel.user_id == PracticeTestModel.user_id)
         ).first()
 
+        if not test_query:
+            raise PracticeTestsNotFoundErrorDomain(
+                f"Không tồn tại bài kiểm tra {practice_test_id}"
+            )
+
+        base_info_domain = PracticeTestOutput(
+            practice_test_id=test_query.practice_test_id,
+            practice_test_name=test_query.practice_test_name,
+            author_avatar_url=test_query.author_avatar_url,
+            author_username=test_query.author_username,
+        )
+
         questions_id_query = (
             self.db.query(PracticeTestQuestionModel.question_id)
             .filter(PracticeTestQuestionModel.practice_test_id == practice_test_id)
@@ -144,130 +195,228 @@ class PracticeTestRepository(IPracticeTestRepository):
             .all()
         )
 
-        questions_id_list = [qid[0] for qid in questions_id_query]
+        questions_ids = [qid[0] for qid in questions_id_query]
 
         question_query = (
-            self.db.query(
-                PracticeTestQuestionModel.question_id,
-                PracticeTestQuestionModel.question_text,
-                PracticeTestQuestionModel.question_type,
-                AnswerOptionModel.option_id,
-                AnswerOptionModel.option_text,
-                AnswerOptionModel.is_correct,
-            )
-            .join(
-                PracticeTestModel,
-                PracticeTestModel.practice_test_id
-                == PracticeTestQuestionModel.practice_test_id,
-            )
-            .join(
-                AnswerOptionModel,
-                AnswerOptionModel.question_id == PracticeTestQuestionModel.question_id,
-            )
-            .filter(PracticeTestQuestionModel.question_id.in_(questions_id_list))
+            self.db.query(PracticeTestQuestionModel)
+            .filter(PracticeTestQuestionModel.question_id.in_(questions_ids))
+            .options(selectinload(PracticeTestQuestionModel.question_anwser_opt))
             .all()
         )
 
-        grouped_questions: Dict[UUID, QuestionDetailOutput] = {}
+        questions_map = {q.question_id: q for q in question_query}
 
-        for item in question_query:
-            if item.question_id not in grouped_questions:
-                grouped_questions[item.question_id] = {
-                    "question": QuestionOutput(
-                        question_id=item.question_id,
-                        question_text=item.question_text,
-                        question_type=item.question_type,
-                    ),
-                    "options": [],
-                }
-
-            grouped_questions[item.question_id]["options"].append(
-                AnswerOptionOutput(
-                    option_id=item.option_id,
-                    option_text=item.option_text,
-                    is_correct=item.is_correct,
-                )
-            )
-
-        test_domain_result = PracticeTestOutput(
-            practice_test_id=test_query.practice_test_id,
-            practice_test_name=test_query.practice_test_name,
-            author_avatar_url=test_query.author_avatar_url,
-            author_username=test_query.author_username,
-        )
-
-        question_anwser_domain_result: List[QuestionDetailOutput] = list(
-            grouped_questions.values()
-        )
-
-        return CourseWithDetails(
-            practice_test=test_domain_result, questions=question_anwser_domain_result
-        )
-
-    def create_new_practice_test(self, payload: NewPracticeTestInput):
-        new_practice_test_domain = PracticeTest.create_new_practice_test(
-            user_id=payload.get("base_info").user_id,
-            practice_test_name=payload.get("base_info").practice_test_name,
-        )
-
-        new_questions_domain: List[PracticeTestQuestion] = []
-        new_options_domain: List[AnswerOption] = []
-        for question_payload in payload.get("questions"):
-            new_question_domain = PracticeTestQuestion.create_new_question(
-                practice_test_id=new_practice_test_domain.practice_test_id,
-                question_text=question_payload.get("question").question_text,
-                question_type=question_payload.get("question").question_type,
-            )
-
-            new_questions_domain.append(new_question_domain)
-
-            for option_payload in question_payload.get("options"):
-                new_options_domain.append(
-                    AnswerOption.create_new_answer_option(
-                        question_id=new_question_domain.question_id,
-                        option_text=option_payload.option_text,
-                        is_correct=option_payload.is_correct,
+        questions_domain: List[QuestionDetailOutput] = []
+        for question_id in questions_ids:
+            if question_id in questions_map:
+                question = questions_map[question_id]
+                questions_domain.append(
+                    QuestionDetailOutput(
+                        question=QuestionOutput(
+                            question_id=question.question_id,
+                            question_text=question.question_text,
+                            question_type=question.question_type,
+                        ),
+                        options=[
+                            AnswerOptionOutput(
+                                option_id=option.option_id,
+                                option_text=option.option_text,
+                                is_correct=option.is_correct,
+                            )
+                            for option in question.question_anwser_opt
+                        ],
                     )
                 )
 
-        try:
-            # Thêm base info
-            new_practice_test_model = PracticeTestModel(
-                practice_test_id=new_practice_test_domain.practice_test_id,
-                user_id=new_practice_test_domain.user_id,
-                practice_test_name=new_practice_test_domain.practice_test_name,
-                created_at=new_practice_test_domain.created_at,
-                updated_at=new_practice_test_domain.updated_at,
-            )
+        return PraceticeTestWithDetailsResponse(
+            base_info=base_info_domain, questions=questions_domain
+        )
 
+    def create_new_practice_test(self, payload: NewPracticeTestInput):
+        try:
+            # Thêm thông tin cơ bản
+            new_practice_test_domain: PracticeTest = Mapper.new_practice_test_domain(
+                payload.base_info
+            )
+            new_practice_test_model: PracticeTestModel = (
+                Mapper.practice_test_domain_to_model(new_practice_test_domain)
+            )
             self.db.add(new_practice_test_model)
 
             # Thêm câu hỏi
-            new_questions_model = [
-                PracticeTestQuestionModel(
-                    question_id=question_domain.question_id,
-                    practice_test_id=question_domain.practice_test_id,
-                    question_text=question_domain.question_text,
-                    question_type=question_domain.question_type,
+            new_questions_model: List[PracticeTestQuestionModel] = []
+            for question_payload in payload.questions:
+                new_question_domain: PracticeTestQuestion = Mapper.new_question_domain(
+                    new_practice_test_domain.practice_test_id, question_payload.question
                 )
-                for question_domain in new_questions_domain
-            ]
-            self.db.add_all(new_questions_model)
+                new_question_model: PracticeTestQuestionModel = (
+                    Mapper.question_domain_to_model(new_question_domain)
+                )
 
-            # Thêm options
-            new_options_model = [
-                AnswerOptionModel(
-                    option_id=option_domain.option_id,
-                    question_id=option_domain.question_id,
-                    option_text=option_domain.option_text,
-                    is_correct=option_domain.is_correct,
-                )
-                for option_domain in new_options_domain
-            ]
-            self.db.add_all(new_options_model)
+                for option_payload in question_payload.options:
+                    new_option_domail: AnswerOption = Mapper.new_option_domain(
+                        new_question_domain.question_id, option_payload
+                    )
+                    new_question_model.question_anwser_opt.append(
+                        Mapper.option_domain_to_model(new_option_domail)
+                    )
+
+                new_questions_model.append(new_question_model)
+            self.db.add_all(new_questions_model)
             self.db.commit()
             return new_practice_test_model.practice_test_id
         except Exception as e:
             print("Lỗi khi thêm bài kiểm tra thử mới", e)
             self.db.rollback()
             raise e
+
+    def update_practice_test(
+        self,
+        practice_test_id: UUID,
+        base_info: Optional[UpdateBaseInfoInput],
+        question_create: List[UpdateQuestionInput],
+        question_update: List[UpdateQuestionInput],
+    ):
+        try:
+            # Cập nhật thông tin cơ bản bài test (nếu có)
+            if base_info:
+                self.db.query(PracticeTestModel).filter(
+                    PracticeTestModel.practice_test_id == practice_test_id
+                ).update(
+                    {PracticeTestModel.practice_test_name: base_info.practice_test_name}
+                )
+
+            # Thêm mới câu hỏi
+            if question_create:
+                questions_model: List[PracticeTestQuestionModel] = []
+                for question in question_create:
+                    new_question_domain: PracticeTestQuestion = (
+                        Mapper.new_question_domain(
+                            practice_test_id, question.question_base
+                        )
+                    )
+                    new_question_model: PracticeTestQuestionModel = (
+                        Mapper.question_domain_to_model(new_question_domain)
+                    )
+                    for option in question.options:
+                        new_option_model = Mapper.option_domain_to_model(
+                            Mapper.new_option_domain(
+                                new_question_domain.question_id,
+                                NewAnswerOptionInput(
+                                    option_text=option.option_text,
+                                    is_correct=option.is_correct,
+                                ),
+                            )
+                        )
+                        new_question_model.question_anwser_opt.append(new_option_model)
+                        questions_model.append(new_question_model)
+                self.db.add_all(questions_model)
+
+            # Cập nhật câu hỏi
+            if question_update:
+                question_ids = [question.question_id for question in question_update]
+                questions = (
+                    self.db.query(PracticeTestQuestionModel)
+                    .filter(PracticeTestQuestionModel.question_id.in_(question_ids))
+                    .options(
+                        selectinload(PracticeTestQuestionModel.question_anwser_opt)
+                    )
+                    .all()
+                )
+
+                questions_map = {
+                    question.question_id: question for question in questions
+                }
+
+                for question in question_update:
+                    cur_question = questions_map[question.question_id]
+                    # Cập nhật thông tin câu hỏi
+                    if question.question_base:
+                        cur_question.question_text = (
+                            question.question_base.question_text
+                        )
+                        cur_question.question_type = (
+                            question.question_base.question_type
+                        )
+
+                    # Cập nhật thông tin câu trả lời
+                    for option in question.options:
+                        # Thêm câu trả lời
+                        if not option.option_id:
+                            option_model = Mapper.option_domain_to_model(
+                                Mapper.new_option_domain(
+                                    question.question_id,
+                                    NewAnswerOptionInput(
+                                        option_text=option.option_text,
+                                        is_correct=option.is_correct,
+                                    ),
+                                )
+                            )
+
+                            cur_question.question_anwser_opt.append(option_model)
+
+                        # Cập nhật câu trả lời
+                        else:
+                            cur_option = next(
+                                (
+                                    o
+                                    for o in cur_question.question_anwser_opt
+                                    if o.option_id == option.option_id
+                                ),
+                                None,
+                            )
+                            if not cur_option:
+                                raise ValueError(
+                                    f"Không tồn tại câu trả lời {option.option_id} trong câu hỏi {cur_question.question_id}"
+                                )
+                            cur_option.option_text = option.option_text
+                            cur_option.is_correct = option.is_correct
+            self.db.commit()
+        except Exception as e:
+            self.db.rollback()
+            raise e
+
+    def delete_answer_option(
+        self, practice_test_id: UUID, question_id: UUID, option_id: UUID
+    ) -> bool:
+        option = (
+            self.db.query(AnswerOptionModel)
+            .join(PracticeTestQuestionModel, AnswerOptionModel.answer_option_question)
+            .join(PracticeTestModel, PracticeTestQuestionModel.question_practice_test)
+            .filter(AnswerOptionModel.option_id == option_id)
+            .filter(PracticeTestQuestionModel.question_id == question_id)
+            .filter(PracticeTestModel.practice_test_id == practice_test_id)
+            .first()
+        )
+
+        if not option:
+            raise OptionNotFoundErrorDomain("Không tồn tại phương án trả lời")
+        self.db.delete(option)
+        self.db.commit()
+        return True
+
+    def delete_question(self, practice_test_id: UUID, question_id: UUID) -> bool:
+        question = (
+            self.db.query(PracticeTestQuestionModel)
+            .join(PracticeTestModel, PracticeTestQuestionModel.question_practice_test)
+            .filter(PracticeTestQuestionModel.question_id == question_id)
+            .filter(PracticeTestModel.practice_test_id == practice_test_id)
+            .first()
+        )
+
+        if not question:
+            raise QuestionNotFoundErrorDomain("Không tồn tại câu hỏi")
+        self.db.delete(question)
+        self.db.commit()
+        return True
+
+    def delete_practice_test(self, practice_test_id: UUID) -> bool:
+        practice_test = (
+            self.db.query(PracticeTestModel)
+            .filter(PracticeTestModel.practice_test_id == practice_test_id)
+            .first()
+        )
+
+        self.db.delete(practice_test)
+        self.db.commit()
+        return True

@@ -1,27 +1,34 @@
+from dataclasses import dataclass
 from abc import ABC, abstractmethod
 from typing import List, Optional, TypedDict
+from uuid import UUID
 
 from app.domain.entities.practice_test.practice_test_entity import (
     PracticeTestOutput,
-    NewPracticeTestBaseInfoInput,
+    NewBaseInfoInput,
+    UpdateBaseInfoInput,
 )
 from app.domain.entities.practice_test.practice_test_question_entity import (
     QuestionOutput,
     NewQuestionBaseInput,
+    UpdateQuestionBaseInput,
 )
 from app.domain.entities.practice_test.answer_option_entity import (
     AnswerOptionOutput,
     NewAnswerOptionInput,
+    UpdateAnswerOptionInput,
 )
 
 
-class QuestionDetailOutput(TypedDict):
+@dataclass(frozen=True)
+class QuestionDetailOutput:
     question: QuestionOutput
-    answer_option: List[AnswerOptionOutput]
+    options: List[AnswerOptionOutput]
 
 
-class PraceticeTestWithDetailsResponse(TypedDict):
-    practice_test: PracticeTestOutput
+@dataclass(frozen=True)
+class PraceticeTestWithDetailsResponse:
+    base_info: PracticeTestOutput
     questions: List[QuestionDetailOutput]
 
 
@@ -31,8 +38,14 @@ class NewQuestionInput(TypedDict):
 
 
 class NewPracticeTestInput(TypedDict):
-    base_info: NewPracticeTestBaseInfoInput
+    base_info: NewBaseInfoInput
     questions: List[NewQuestionInput]
+
+
+@dataclass(frozen=True)
+class UpdateQuestionInput:
+    question: UpdateQuestionBaseInput
+    options: List[UpdateAnswerOptionInput]
 
 
 class IPracticeTestRepository(ABC):
@@ -47,11 +60,39 @@ class IPracticeTestRepository(ABC):
         pass
 
     @abstractmethod
+    def check_user_practice_test(self, user_id: UUID, practice_test_id: UUID) -> bool:
+        pass
+
+    @abstractmethod
     def get_practice_test_detail_by_id(
         self, practice_test_id: str, count: int | None
     ) -> PraceticeTestWithDetailsResponse:
         pass
 
     @abstractmethod
-    def create_new_practice_test(self, payload: NewPracticeTestInput):
+    def create_new_practice_test(self, payload: NewPracticeTestInput) -> UUID:
+        pass
+
+    @abstractmethod
+    def update_practice_test(
+        self,
+        practice_test_id: UUID,
+        base_info: Optional[UpdateBaseInfoInput],
+        question_create: List[UpdateQuestionInput],
+        question_update: List[UpdateQuestionInput],
+    ):
+        pass
+
+    @abstractmethod
+    def delete_answer_option(
+        self, practice_test_id: UUID, question_id: UUID, option_id: UUID
+    ) -> bool:
+        pass
+
+    @abstractmethod
+    def delete_question(self, practice_test_id: UUID, question_id: UUID) -> bool:
+        pass
+
+    @abstractmethod
+    def delete_practice_test(self, practice_test_id: UUID) -> bool:
         pass
