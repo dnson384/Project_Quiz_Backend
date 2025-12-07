@@ -1,4 +1,5 @@
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel
+from typing import Optional
 from uuid import UUID
 from enum import Enum
 
@@ -16,16 +17,20 @@ class LoginMethod(str, Enum):
 
 class UserOut(BaseModel):
     user_id: UUID
-    username: str = Field(max_length=255)
-    email: EmailStr = Field(max_length=255)
+    username: str
+    email: str
     role: UserRole
-    avatar_url: str | None = None
-
-    class Config:
-        from_attributes = True
+    avatar_url: str
 
 
 class UserResponse(BaseModel):
     user: UserOut
     access_token: str | None
     refresh_token: str | None
+
+
+class UpdateUserInput(BaseModel):
+    username: Optional[str]
+    email: Optional[str]
+    role: Optional[UserRole]
+    avatar_url: Optional[str]

@@ -1,5 +1,4 @@
 from sqlalchemy.orm import Session
-from datetime import datetime
 from uuid import UUID
 
 from app.application.abstractions.refresh_token_abstraction import (
@@ -13,19 +12,15 @@ class RefreshTokenRepository(IRefreshTokenRepository):
     def __init__(self, db: Session):
         self.db = db
 
-    def save_refresh_token_jti(self, payload: RefreshToken) -> RefreshToken:
+    def save_refresh_token(self, payload: RefreshToken):
         db_token = RefreshTokenModel(
             jti=payload.jti,
             user_id=payload.user_id,
             expires_at=payload.expires_at,
             issued_at=payload.issued_at,
         )
-
         self.db.add(db_token)
         self.db.commit()
-        self.db.refresh(db_token)
-
-        return payload
 
     def is_jti_valid(self, jti: UUID) -> bool:
         token = (

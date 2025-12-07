@@ -1,6 +1,7 @@
 from uuid import UUID
 from uuid6 import uuid7
 from datetime import datetime
+from dataclasses import dataclass
 
 
 class RefreshToken:
@@ -35,7 +36,6 @@ class RefreshToken:
     @property
     def user_id(self) -> UUID:
         return self._user_id
-    
 
     @property
     def expires_at(self) -> datetime:

@@ -3,8 +3,23 @@ class ApplicationError(Exception):
     pass
 
 
+# ----------------Auth----------------
+class EmailExistedError(ApplicationError):
+    pass
+
+
+class InvalidCredentialsError(ApplicationError):
+    pass
+
+
+class AccountNotFoundError(ApplicationError):
+    pass
+
+
+# User
 class UserNotFoundError(ApplicationError):
     pass
+
 
 class UserNotAllowError(ApplicationError):
     pass
@@ -28,4 +43,3 @@ class QuestionNotFoundError(ApplicationError):
 
 class OptionNotFoundError(ApplicationError):
     pass
-
