@@ -93,12 +93,10 @@ class PracticeTestController:
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
             )
 
-    def create_new_practice_test(self, payload: NewPracticeTestInput):
-        baseinfo_payload = payload.base_info
-
+    def create_new_practice_test(self, user_id: UUID, payload: NewPracticeTestInput):
         base_info_dto = DTOBaseInfoInput(
-            practice_test_name=baseinfo_payload.practice_test_name,
-            user_id=baseinfo_payload.user_id,
+            practice_test_name=payload.base_info.practice_test_name,
+            user_id=user_id,
         )
 
         questions_dto: List[DTOQuestionInput] = []
