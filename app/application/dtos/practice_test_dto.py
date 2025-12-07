@@ -1,6 +1,6 @@
 from uuid import UUID
 from pydantic import BaseModel, ConfigDict
-from typing import List, TypedDict, Literal
+from typing import List, TypedDict, Literal, Optional
 
 
 class DTOPracticeTestOutput(BaseModel):
@@ -50,7 +50,7 @@ class DTOBaseInfoInput(BaseModel):
 
 class DTOQuestionBaseInput(BaseModel):
     question_text: str
-    question_type: str = Literal["MULTIPLE_CHOICE", "TRUE_FALSE"]
+    question_type: Literal["SINGLE_CHOICE", "MULTIPLE_CHOICE", "TRUE_FALSE"]
 
 
 class DTOAnswerOptionsInput(BaseModel):
@@ -66,3 +66,30 @@ class DTOQuestionInput(BaseModel):
 class DTONewPracticeTestInput(BaseModel):
     base_info: DTOBaseInfoInput
     questions: List[DTOQuestionInput]
+
+
+# Sửa
+class DTOUpdateBaseInfoInput(BaseModel):
+    practice_test_name: str
+
+
+class DTOUpdateQuestionBaseInput(BaseModel):
+    question_text: str
+    question_type: Literal["SINGLE_CHOICE", "MULTIPLE_CHOICE", "TRUE_FALSE"]
+
+
+class DTOUpdateOptionInput(BaseModel):
+    option_id: Optional[UUID]
+    option_text: str
+    is_correct: bool
+
+
+class DTOUpdateQuestionInput(BaseModel):
+    question_id: Optional[UUID]
+    question: Optional[DTOUpdateQuestionBaseInput]
+    options: List[DTOUpdateOptionInput]
+
+
+class DTOUpdatePracticeTestInput(BaseModel):
+    base_info: Optional[DTOUpdateBaseInfoInput]
+    questions: List[DTOUpdateQuestionInput]

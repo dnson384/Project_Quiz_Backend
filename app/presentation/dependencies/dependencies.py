@@ -1,4 +1,5 @@
-from fastapi import Depends
+from fastapi import Depends, Request, HTTPException, status
+from uuid import UUID
 
 from app.application.use_cases.search_service import SearchServices
 from app.application.use_cases.auth_service import AuthService
@@ -95,3 +96,20 @@ def get_practice_test_controller(
     service: PracticeTestService = Depends(get_practice_test_service),
 ) -> PracticeTestController:
     return PracticeTestController(service)
+
+
+def get_current_user(
+    req: Request, controller: UserController = Depends(get_user_controller)
+) -> UUID:
+    authorization = req.headers.get("Authorization")
+    if not authorization:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Không tìm thấy token"
+        )
+    token = authorization.split(" ")[-1]
+
+    try:
+        cur_user = controller.get_access_user(token)
+        return cur_user.user_id
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)

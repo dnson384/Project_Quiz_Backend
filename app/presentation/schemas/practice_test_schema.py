@@ -1,5 +1,5 @@
 from pydantic import BaseModel, ConfigDict
-from typing import List, Literal
+from typing import List, Literal, Optional
 from uuid import UUID
 
 
@@ -49,7 +49,7 @@ class BaseInfoInput(BaseModel):
 
 class QuestionBaseInput(BaseModel):
     question_text: str
-    question_type: str = Literal["MULTIPLE_CHOICE", "TRUE_FALSE"]
+    question_type: Literal["SINGLE_CHOICE", "MULTIPLE_CHOICE", "TRUE_FALSE"]
 
 
 class AnswerOptionsInput(BaseModel):
@@ -65,3 +65,30 @@ class QuestionInput(BaseModel):
 class NewPracticeTestInput(BaseModel):
     base_info: BaseInfoInput
     questions: List[QuestionInput]
+
+
+# Sửa
+class UpdateBaseInfoInput(BaseModel):
+    practice_test_name: str
+
+
+class UpdateQuestionBaseInput(BaseModel):
+    question_text: str
+    question_type: Literal["SINGLE_CHOICE", "MULTIPLE_CHOICE", "TRUE_FALSE"]
+
+
+class UpdateOptionInput(BaseModel):
+    option_id: Optional[UUID]
+    option_text: str
+    is_correct: bool
+
+
+class UpdateQuestionInput(BaseModel):
+    question_id: Optional[UUID]
+    question: Optional[UpdateQuestionBaseInput]
+    options: List[UpdateOptionInput]
+
+
+class UpdatePracticeTestInput(BaseModel):
+    base_info: Optional[UpdateBaseInfoInput]
+    questions: List[UpdateQuestionInput]

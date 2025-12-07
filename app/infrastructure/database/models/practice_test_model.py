@@ -30,7 +30,9 @@ class PracticeTestModel(Base):
         cascade="all, delete-orphan",
     )
     # users
-    practice_test_user = relationship("UserModel", back_populates="user_practice_test")
+    practice_test_user = relationship(
+        "UserModel", back_populates="user_practice_test"
+    )
 
 
 class PracticeTestQuestionModel(Base):
@@ -53,7 +55,9 @@ class PracticeTestQuestionModel(Base):
         "PracticeTestModel", back_populates="practice_test_question"
     )
     question_anwser_opt = relationship(
-        "AnswerOptionModel", back_populates="answer_option_question"
+        "AnswerOptionModel",
+        back_populates="answer_option_question",
+        cascade="all, delete-orphan",
     )
 
 

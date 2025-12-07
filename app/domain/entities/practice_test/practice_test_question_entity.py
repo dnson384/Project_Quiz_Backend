@@ -91,3 +91,8 @@ class QuestionOutput:
 class NewQuestionBaseInput:
     question_text: str
     question_type: str
+
+@dataclass(frozen=True)
+class UpdateQuestionBaseInput:
+    question_text: str
+    question_type: str

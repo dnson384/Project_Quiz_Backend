@@ -74,6 +74,11 @@ class PracticeTestOutput:
 
 
 @dataclass(frozen=True)
-class NewPracticeTestBaseInfoInput:
+class NewBaseInfoInput:
     practice_test_name: str
     user_id: UUID
+
+
+@dataclass(frozen=True)
+class UpdateBaseInfoInput:
+    practice_test_name: str
