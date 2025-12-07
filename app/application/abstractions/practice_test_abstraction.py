@@ -60,7 +60,7 @@ class IPracticeTestRepository(ABC):
         pass
 
     @abstractmethod
-    def check_user_practice_test(self, user_id: UUID, practice_test_id: UUID) -> bool:
+    def check_user_practice_test(self, user_id: UUID, practice_test_id: UUID):
         pass
 
     @abstractmethod

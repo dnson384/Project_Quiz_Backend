@@ -40,7 +40,6 @@ class CourseQuestionOutput(TypedDict):
 # Tạo mới
 class NewCourseInput(BaseModel):
     course_name: str
-    user_id: UUID
 
 
 class NewCourseDetailInput(BaseModel):

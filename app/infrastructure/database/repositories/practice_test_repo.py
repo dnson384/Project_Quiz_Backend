@@ -146,7 +146,7 @@ class PracticeTestRepository(IPracticeTestRepository):
             print("Có lỗi xảy ra khi lấy bài kiểm tra thử ngẫu nhiên", e)
             return []
 
-    def check_user_practice_test(self, user_id: UUID, practice_test_id: UUID) -> bool:
+    def check_user_practice_test(self, user_id: UUID, practice_test_id: UUID):
         if (
             not self.db.query(PracticeTestModel)
             .filter(PracticeTestModel.practice_test_id == practice_test_id)

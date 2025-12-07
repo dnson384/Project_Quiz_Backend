@@ -146,40 +146,16 @@ class CoursesRepository(ICourseRepository):
             print("Có lỗi xảy ra khi lấy học phần ngẫu nhiên", e)
             return []
 
-    def get_course_by_id(self, course_id: UUID) -> CourseOutput:
-        try:
-            course_query = (
-                self.db.query(
-                    CourseModel.course_id,
-                    CourseModel.course_name,
-                    UserModel.avatar_url,
-                    UserModel.username,
-                    UserModel.role,
-                )
-                .filter(CourseModel.course_id == course_id)
-                .join(UserModel, UserModel.user_id == CourseModel.user_id)
-                .first()
-            )
-
-            detail_query = (
-                self.db.query(
-                    CourseDetailModel.course_detail_id,
-                )
-                .filter(CourseDetailModel.course_id == course_id)
-                .all()
-            )
-
-            return CourseOutput(
-                course_id=course_query.course_id,
-                course_name=course_query.course_name,
-                author_avatar_url=course_query.avatar_url,
-                author_username=course_query.username,
-                author_role=course_query.role,
-                num_of_terms=len(detail_query),
-            )
-        except Exception as e:
-            print("Có lỗi xảy ra khi lấy thông tin học phần", e)
-            return None
+    def check_user_course(self, user_id: UUID, course_id: UUID):
+        if not self.db.query(CourseModel).filter(CourseModel.course_id == course_id).first():
+            raise CoursesNotFoundErrorDomain("Không tồn tại học phần")
+        return (
+            self.db.query(CourseModel)
+            .join(UserModel, CourseModel.course_user)
+            .filter(UserModel.user_id == user_id)
+            .filter(CourseModel.course_id == course_id)
+            .first()
+        )
 
     def get_course_detail_by_id(self, course_id: Optional[str]) -> CourseWithDetails:
         try:

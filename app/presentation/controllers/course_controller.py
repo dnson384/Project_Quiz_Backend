@@ -14,6 +14,7 @@ from app.application.dtos.course_dto import (
 from app.application.exceptions import (
     CourseNotFoundError,
     UserNotFoundError,
+    UserNotAllowError,
     CourseDetailNotFoundError,
 )
 
@@ -112,11 +113,14 @@ class CourseController:
             )
 
     def create_new_course(
-        self, course_in: NewCourseInput, detail_in: List[NewCourseDetailInput]
+        self,
+        user_id: UUID,
+        course_in: NewCourseInput,
+        detail_in: List[NewCourseDetailInput],
     ):
         try:
             course_in_dto = DTONewCourseInput(
-                course_name=course_in.course_name, user_id=course_in.user_id
+                course_name=course_in.course_name, user_id=user_id
             )
 
             detail_in_dto: List[DTONewCourseDetailInput] = []
@@ -163,9 +167,12 @@ class CourseController:
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
             )
 
-    def update_course(self, course_id: UUID, payload: UpdateCourseRequest):
+    def update_course(
+        self, user_id: UUID, course_id: UUID, payload: UpdateCourseRequest
+    ):
         try:
             response = self.service.update_course(
+                user_id=user_id,
                 course_id=course_id,
                 payload=DTOUpdateCourseRequest(
                     course=(
@@ -204,32 +211,29 @@ class CourseController:
                     for detail in detail_res
                 ],
             )
+        except UserNotAllowError:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
         except CourseNotFoundError as e:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
-        except Exception as e:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Lỗi controller {e}",
-            )
 
-    def delete_course_detail(self, course_id: UUID, course_detail_id: UUID):
+    def delete_course_detail(
+        self, user_id: UUID, course_id: UUID, course_detail_id: UUID
+    ):
         try:
-            return self.service.delete_course_detail(course_id, course_detail_id)
+            return self.service.delete_course_detail(
+                user_id, course_id, course_detail_id
+            )
+        except UserNotAllowError:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
         except CourseNotFoundError as e:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
         except CourseDetailNotFoundError as e:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
-        except Exception as e:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
-            )
 
-    def delete_course(self, course_id: UUID):
+    def delete_course(self, user_id: UUID, course_id: UUID):
         try:
-            return self.service.delete_course(course_id)
+            return self.service.delete_course(user_id, course_id)
+        except UserNotAllowError:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
         except CourseNotFoundError as e:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
-        except Exception as e:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
-            )
