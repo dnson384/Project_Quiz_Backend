@@ -5,6 +5,7 @@ from uuid import UUID
 from app.domain.entities.practice_test.practice_test_entity import (
     NewBaseInfoInput,
     UpdateBaseInfoInput,
+    PracticeTestOutput,
 )
 from app.domain.entities.practice_test.practice_test_question_entity import (
     NewQuestionBaseInput,
@@ -24,6 +25,7 @@ from app.application.abstractions.practice_test_abstraction import (
     IPracticeTestRepository,
 )
 from app.application.dtos.practice_test_dto import (
+    DTOPracticeTestOutput,
     DTONewPracticeTestInput,
     DTOUpdatePracticeTestInput,
 )
@@ -57,6 +59,23 @@ class UpdateQuestionInput:
 class PracticeTestService:
     def __init__(self, practice_test_repo: IPracticeTestRepository):
         self.practice_test_repo = practice_test_repo
+
+    def get_user_practice_test(self, user_id: UUID):
+        try:
+            practice_tests: List[PracticeTestOutput] = (
+                self.practice_test_repo.get_practice_tests_by_user_id(user_id)
+            )
+            return [
+                DTOPracticeTestOutput(
+                    practice_test_id=practice_test.practice_test_id,
+                    practice_test_name=practice_test.practice_test_name,
+                    author_avatar_url=practice_test.author_avatar_url,
+                    author_username=practice_test.author_username,
+                )
+                for practice_test in practice_tests
+            ]
+        except PracticeTestsNotFoundErrorDomain as e:
+            raise PracticeTestsNotFoundError(str(e))
 
     def get_random_practice_test(self):
         try:
@@ -173,7 +192,7 @@ class PracticeTestService:
             questions_create_domain,
             questions_update_domain,
         )
-        
+
         return self.practice_test_repo.get_practice_test_detail_by_id(
             practice_test_id=practice_test_id, count=None
         )

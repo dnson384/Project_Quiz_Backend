@@ -76,6 +76,30 @@ class PracticeTestRepository(IPracticeTestRepository):
     def __init__(self, db: Session):
         self.db = db
 
+    def get_practice_tests_by_user_id(self, user_id: UUID) -> List[PracticeTestOutput]:
+        practice_tests = (
+            self.db.query(
+                PracticeTestModel.practice_test_id,
+                PracticeTestModel.practice_test_name,
+                UserModel.avatar_url,
+                UserModel.username,
+            )
+            .join(UserModel, PracticeTestModel.practice_test_user)
+            .filter(PracticeTestModel.user_id == user_id)
+            .all()
+        )
+        if not practice_tests:
+            raise PracticeTestsNotFoundErrorDomain("Người dùng không có bài kiểm tra")
+        return [
+            PracticeTestOutput(
+                practice_test_id=practice_test.practice_test_id,
+                practice_test_name=practice_test.practice_test_name,
+                author_avatar_url=practice_test.avatar_url,
+                author_username=practice_test.username,
+            )
+            for practice_test in practice_tests
+        ]
+
     def get_practice_tests_by_keyword(
         self, keyword: str, cursor_id: Optional[str] = None
     ) -> List[PracticeTestOutput]:

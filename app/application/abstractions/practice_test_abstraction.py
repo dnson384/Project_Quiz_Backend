@@ -50,6 +50,10 @@ class UpdateQuestionInput:
 
 class IPracticeTestRepository(ABC):
     @abstractmethod
+    def get_practice_tests_by_user_id(self, user_id: UUID) -> List[PracticeTestOutput]:
+        pass
+
+    @abstractmethod
     def get_practice_tests_by_keyword(
         self, keyword: str, cursor_id: Optional[str] = None
     ) -> List[PracticeTestOutput]:
