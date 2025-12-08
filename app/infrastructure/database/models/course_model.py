@@ -21,9 +21,9 @@ class CourseModel(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    course = relationship(
+    course_detail = relationship(
         "CourseDetailModel",
-        back_populates="course_detail",
+        back_populates="course",
         cascade="all, delete-orphan",
     )
     course_user = relationship("UserModel", back_populates="user_course")
@@ -37,4 +37,4 @@ class CourseDetailModel(Base):
     term = Column(String(255), nullable=False)
     definition = Column(Text, nullable=False)
 
-    course_detail = relationship("CourseModel", back_populates="course")
+    course = relationship("CourseModel", back_populates="course_detail")

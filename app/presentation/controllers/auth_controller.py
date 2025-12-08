@@ -75,6 +75,8 @@ class AuthController:
     def re_generate_access_token(self, refresh_token: str):
         try:
             return self.service.refresh_access_token(refresh_token)
+        except InvalidCredentialsError as e:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
         except AccountNotFoundError as e:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,

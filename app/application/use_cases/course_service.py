@@ -45,6 +45,25 @@ class CourseService:
         self.course_repo = course_repo
         self.user_repo = user_repo
 
+    def get_user_course(self, user_id: UUID):
+        try:
+            courses: List[CourseOutput] = self.course_repo.get_courses_by_user_id(
+                user_id
+            )
+            return [
+                DTOCourseOutput(
+                    course_id=course.course_id,
+                    course_name=course.course_name,
+                    author_avatar_url=course.author_avatar_url,
+                    author_username=course.author_username,
+                    author_role=course.author_role,
+                    num_of_terms=course.num_of_terms,
+                )
+                for course in courses
+            ]
+        except CoursesNotFoundErrorDomain as e:
+            raise CourseNotFoundError(str(e))
+
     def get_random_course(self):
         try:
             sample_courses = self.course_repo.get_random_courses()

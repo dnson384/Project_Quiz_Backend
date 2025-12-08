@@ -39,6 +39,43 @@ class CoursesRepository(ICourseRepository):
     def __init__(self, db: Session):
         self.db = db
 
+    def get_courses_by_user_id(self, user_id: UUID) -> List[CourseOutput]:
+        user_courses = (
+            self.db.query(
+                CourseModel.course_id,
+                CourseModel.course_name,
+                UserModel.username,
+                UserModel.avatar_url,
+                UserModel.role,
+                func.count(CourseDetailModel.course_detail_id).label("num_of_terms"),
+            )
+            .join(UserModel, CourseModel.course_user)
+            .join(CourseDetailModel, CourseModel.course_detail)
+            .filter(CourseModel.user_id == user_id)
+            .filter(CourseDetailModel.course_id == CourseModel.course_id)
+            .group_by(
+                CourseModel.course_id,
+                CourseModel.course_name,
+                UserModel.username,
+                UserModel.avatar_url,
+                UserModel.role,
+            )
+            .all()
+        )
+        if not user_courses:
+            raise CoursesNotFoundErrorDomain("Người dùng không có học phần")
+        return [
+            CourseOutput(
+                course_id=course.course_id,
+                course_name=course.course_name,
+                author_avatar_url=course.avatar_url,
+                author_username=course.username,
+                author_role=course.role,
+                num_of_terms=course.num_of_terms,
+            )
+            for course in user_courses
+        ]
+
     def get_courses_by_keyword(
         self, keyword: str, cursor_id: Optional[str] = None
     ) -> List[CourseOutput]:
@@ -147,7 +184,11 @@ class CoursesRepository(ICourseRepository):
             return []
 
     def check_user_course(self, user_id: UUID, course_id: UUID):
-        if not self.db.query(CourseModel).filter(CourseModel.course_id == course_id).first():
+        if (
+            not self.db.query(CourseModel)
+            .filter(CourseModel.course_id == course_id)
+            .first()
+        ):
             raise CoursesNotFoundErrorDomain("Không tồn tại học phần")
         return (
             self.db.query(CourseModel)
