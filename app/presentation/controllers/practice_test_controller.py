@@ -5,6 +5,7 @@ from typing import List
 
 from app.application.use_cases.practice_test_service import PracticeTestService
 from app.application.dtos.practice_test_dto import (
+    DTOPracticeTestOutput,
     # POST
     DTOBaseInfoInput,
     DTOQuestionBaseInput,
@@ -39,6 +40,23 @@ from app.presentation.schemas.practice_test_schema import (
 class PracticeTestController:
     def __init__(self, service: PracticeTestService):
         self.service = service
+
+    def get_user_practice_test(self, user_id: UUID):
+        try:
+            practiceTests: List[DTOPracticeTestOutput] = (
+                self.service.get_user_practice_test(user_id)
+            )
+            return [
+                PracticeTestOutput(
+                    practice_test_id=practiceTest.practice_test_id,
+                    practice_test_name=practiceTest.practice_test_name,
+                    author_avatar_url=practiceTest.author_avatar_url,
+                    author_username=practiceTest.author_username,
+                )
+                for practiceTest in practiceTests
+            ]
+        except PracticeTestsNotFoundError as e:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
     def get_random_practice_test(self):
         try:
