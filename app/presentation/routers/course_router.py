@@ -20,6 +20,16 @@ router = APIRouter(prefix="/course", tags=["COURSE"])
 
 
 @router.get(
+    "/my-course", response_model=List[CourseOutput], status_code=status.HTTP_200_OK
+)
+def get_user_course(
+    user_id: UUID = Depends(get_current_user),
+    controller: CourseController = Depends(get_course_controller),
+):
+    return controller.get_user_course(user_id)
+
+
+@router.get(
     "/random", response_model=List[CourseOutput], status_code=status.HTTP_200_OK
 )
 def get_random_courses(controller: CourseController = Depends(get_course_controller)):

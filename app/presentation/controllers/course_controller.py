@@ -10,6 +10,7 @@ from app.application.dtos.course_dto import (
     DTOUpdateCourseInput,
     DTOUpdateCourseDetailInput,
     DTOUpdateCourseRequest,
+    DTOCourseOutput
 )
 from app.application.exceptions import (
     CourseNotFoundError,
@@ -33,6 +34,23 @@ from app.presentation.schemas.course_schema import (
 class CourseController:
     def __init__(self, service: CourseService):
         self.service = service
+
+    def get_user_course(self, user_id: UUID):
+        try:
+            courses: List[DTOCourseOutput] = self.service.get_user_course(user_id)
+            return [
+                CourseOutput(
+                    course_id=course.course_id,
+                    course_name=course.course_name,
+                    author_avatar_url=course.author_avatar_url,
+                    author_username=course.author_username,
+                    author_role=course.author_role,
+                    num_of_terms=course.num_of_terms,
+                )
+                for course in courses
+            ]
+        except CourseNotFoundError as e:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
     def get_random_course(self):
         try:
