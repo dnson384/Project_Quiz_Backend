@@ -44,6 +44,24 @@ class CourseService:
         self.course_repo = course_repo
         self.user_repo = user_repo
 
+    def get_courses_by_user_id(self, user_id: UUID):
+        try:
+            user_courses_domain = self.course_repo.get_courses_by_user_id(user_id)
+
+            return [
+                DTOCourseOutput(
+                    course_id=user_course.course_id,
+                    course_name=user_course.course_name,
+                    author_avatar_url=user_course.author_avatar_url,
+                    author_username=user_course.author_avatar_url,
+                    author_role=user_course.author_role,
+                    num_of_terms=user_course.num_of_terms,
+                )
+                for user_course in user_courses_domain
+            ]
+        except CoursesNotFoundErrorDomain:
+            raise CourseNotFoundError()
+
     def get_random_course(self):
         try:
             sample_courses = self.course_repo.get_random_courses()
@@ -112,17 +130,16 @@ class CourseService:
 
     def create_new_course(
         self,
+        user_id: UUID,
         course_in: DTONewCourseInput,
         detail_in: List[DTONewCourseDetailInput],
     ):
         try:
-            if not self.user_repo.get_user_by_id(course_in.user_id):
-                raise UserNotFoundError(
-                    f"User with ID {course_in.user_id} does not exist"
-                )
+            if not self.user_repo.get_user_by_id(user_id):
+                raise UserNotFoundError(f"User with ID {user_id} does not exist")
 
             course_in_domain = CreateNewCourseInput(
-                course_name=course_in.course_name, user_id=course_in.user_id
+                course_name=course_in.course_name, user_id=user_id
             )
             detail_in_domain: List[CreateNewCourseDetailInput] = []
             for detail in detail_in:
@@ -132,30 +149,9 @@ class CourseService:
                     )
                 )
 
-            response: CourseWithDetails = self.course_repo.create_new_course(
+            return self.course_repo.create_new_course(
                 course_in_domain, detail_in_domain
             )
-
-            dto_course = DTOCourseOutput(
-                course_id=response.get("course").course_id,
-                course_name=response.get("course").course_name,
-                author_avatar_url=response.get("course").author_avatar_url,
-                author_username=response.get("course").author_username,
-                author_role=response.get("course").author_role,
-                num_of_terms=response.get("course").num_of_terms,
-            )
-
-            dto_detail: List[DTOCourseDetailOutput] = []
-            for detail in response.get("course_detail"):
-                dto_detail.append(
-                    DTOCourseDetailOutput(
-                        course_detail_id=detail.course_detail_id,
-                        term=detail.term,
-                        definition=detail.definition,
-                    )
-                )
-
-            return DTOCourseWithDetails(course=dto_course, course_detail=dto_detail)
         except Exception as e:
             raise Exception("Không thể thêm mới học phần - service", e)
 

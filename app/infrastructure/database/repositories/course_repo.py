@@ -39,6 +39,47 @@ class CoursesRepository(ICourseRepository):
     def __init__(self, db: Session):
         self.db = db
 
+    def get_courses_by_user_id(self, user_id: UUID) -> List[CourseOutput]:
+        query = (
+            self.db.query(
+                CourseModel.course_id,
+                CourseModel.course_name,
+                UserModel.avatar_url,
+                UserModel.username,
+                UserModel.role,
+                func.count(CourseDetailModel.course_detail_id).label("num_of_terms"),
+            )
+            .join(UserModel, CourseModel.user_id == UserModel.user_id)
+            .join(
+                CourseDetailModel,
+                CourseModel.course_id == CourseDetailModel.course_id,
+            )
+            .filter(UserModel.user_id == user_id)
+            .group_by(
+                CourseModel.course_id,
+                UserModel.avatar_url,
+                UserModel.username,
+                UserModel.role,
+                CourseModel.course_name,
+            )
+            .all()
+        )
+
+        if len(query) < 0:
+            raise CoursesNotFoundErrorDomain()
+
+        return [
+            CourseOutput(
+                course_id=item.course_id,
+                course_name=item.course_name,
+                author_avatar_url=item.avatar_url,
+                author_username=item.username,
+                author_role=item.role,
+                num_of_terms=item.num_of_terms,
+            )
+            for item in query
+        ]
+
     def get_courses_by_keyword(
         self, keyword: str, cursor_id: Optional[str] = None
     ) -> List[CourseOutput]:

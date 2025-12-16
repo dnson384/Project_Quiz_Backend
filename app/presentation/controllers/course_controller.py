@@ -33,6 +33,12 @@ class CourseController:
     def __init__(self, service: CourseService):
         self.service = service
 
+    def get_courses_by_user_id(self, user_id: UUID):
+        try:
+            return self.service.get_courses_by_user_id(user_id)
+        except CourseNotFoundError as e:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+
     def get_random_course(self):
         try:
             return self.service.get_random_course()
@@ -112,12 +118,13 @@ class CourseController:
             )
 
     def create_new_course(
-        self, course_in: NewCourseInput, detail_in: List[NewCourseDetailInput]
+        self,
+        user_id: UUID,
+        course_in: NewCourseInput,
+        detail_in: List[NewCourseDetailInput],
     ):
         try:
-            course_in_dto = DTONewCourseInput(
-                course_name=course_in.course_name, user_id=course_in.user_id
-            )
+            course_in_dto = DTONewCourseInput(course_name=course_in.course_name)
 
             detail_in_dto: List[DTONewCourseDetailInput] = []
             for detail in detail_in:
@@ -132,30 +139,7 @@ class CourseController:
             )
 
         try:
-            response: DTOCourseWithDetails = self.service.create_new_course(
-                course_in_dto, detail_in_dto
-            )
-
-            sch_course = CourseOutput(
-                course_id=response.get("course").course_id,
-                course_name=response.get("course").course_name,
-                author_avatar_url=response.get("course").author_avatar_url,
-                author_username=response.get("course").author_username,
-                author_role=response.get("course").author_role,
-                num_of_terms=response.get("course").num_of_terms,
-            )
-
-            sch_detail: List[CourseDetailOutput] = []
-            for detail in response.get("course_detail"):
-                sch_detail.append(
-                    CourseDetailOutput(
-                        course_detail_id=detail.course_detail_id,
-                        term=detail.term,
-                        definition=detail.definition,
-                    )
-                )
-
-            return CourseWithDetailsOutput(course=sch_course, course_detail=sch_detail)
+            return self.service.create_new_course(user_id, course_in_dto, detail_in_dto)
         except UserNotFoundError as e:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
         except Exception as e:

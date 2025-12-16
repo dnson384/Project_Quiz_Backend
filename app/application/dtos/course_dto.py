@@ -28,7 +28,6 @@ class DTOCourseWithDetails(TypedDict):
 
 class DTONewCourseInput(BaseModel):
     course_name: str
-    user_id: UUID
 
 
 class DTONewCourseDetailInput(BaseModel):

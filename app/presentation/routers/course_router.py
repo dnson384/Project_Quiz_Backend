@@ -11,9 +11,22 @@ from app.presentation.schemas.course_schema import (
     NewCourseDetailInput,
     UpdateCourseRequest,
 )
-from app.presentation.dependencies.dependencies import get_course_controller
+from app.presentation.dependencies.dependencies import (
+    get_course_controller,
+    get_current_user,
+)
 
 router = APIRouter(prefix="/course", tags=["COURSE"])
+
+
+@router.get(
+    "/my-course", response_model=List[CourseOutput], status_code=status.HTTP_200_OK
+)
+def get_my_course(
+    user_id: UUID = Depends(get_current_user),
+    controller: CourseController = Depends(get_course_controller),
+):
+    return controller.get_courses_by_user_id(user_id)
 
 
 @router.get(
@@ -57,9 +70,10 @@ def get_course_test_by_id(
 def create_new_course(
     course_in: NewCourseInput,
     detail_in: List[NewCourseDetailInput],
+    user_id: UUID = Depends(get_current_user),
     controller: CourseController = Depends(get_course_controller),
 ):
-    return controller.create_new_course(course_in, detail_in)
+    return controller.create_new_course(user_id, course_in, detail_in)
 
 
 @router.put(
