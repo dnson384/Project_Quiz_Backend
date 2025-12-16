@@ -152,30 +152,9 @@ class CourseService:
                     )
                 )
 
-            response: CourseWithDetails = self.course_repo.create_new_course(
+            return self.course_repo.create_new_course(
                 course_in_domain, detail_in_domain
             )
-
-            dto_course = DTOCourseOutput(
-                course_id=response.get("course").course_id,
-                course_name=response.get("course").course_name,
-                author_avatar_url=response.get("course").author_avatar_url,
-                author_username=response.get("course").author_username,
-                author_role=response.get("course").author_role,
-                num_of_terms=response.get("course").num_of_terms,
-            )
-
-            dto_detail: List[DTOCourseDetailOutput] = []
-            for detail in response.get("course_detail"):
-                dto_detail.append(
-                    DTOCourseDetailOutput(
-                        course_detail_id=detail.course_detail_id,
-                        term=detail.term,
-                        definition=detail.definition,
-                    )
-                )
-
-            return DTOCourseWithDetails(course=dto_course, course_detail=dto_detail)
         except Exception as e:
             raise Exception("Không thể thêm mới học phần - service", e)
 
@@ -223,10 +202,10 @@ class CourseService:
                     )
         except Exception as e:
             raise Exception("Lỗi khi cập nhật chi tiết học phần", e)
-        return self.get_course_detail_by_id(course_id=course_id)
+        return True
 
     def delete_course_detail(
-        self, user_id: UUID, course_id: UUID, course_detail_id: UUID
+        self, user_id: UUID, course_id: UUID, course_detail_id: List[UUID]
     ) -> bool:
         self.check_user_course(user_id, course_id)
         return self.course_repo.delete_course_detail(course_id, course_detail_id)

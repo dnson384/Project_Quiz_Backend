@@ -47,7 +47,7 @@ class ICourseRepository(ABC):
         self,
         course_in: CreateNewCourseInput,
         detail_in: List[CreateNewCourseDetailInput],
-    ) -> CourseWithDetailsResponse:
+    ) -> bool:
         pass
 
     @abstractmethod
@@ -65,7 +65,7 @@ class ICourseRepository(ABC):
         pass
 
     @abstractmethod
-    def delete_course_detail(self, course_id: UUID, course_detail_id: UUID):
+    def delete_course_detail(self, course_id: UUID, course_detail_id: List[UUID]):
         pass
 
     @abstractmethod
