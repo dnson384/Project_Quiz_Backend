@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, status, Body
 from uuid import UUID
 from typing import List
 
@@ -64,9 +64,7 @@ def get_course_test_by_id(
     return controller.get_course_test_by_id(course_id)
 
 
-@router.post(
-    "/", response_model=CourseWithDetailsOutput, status_code=status.HTTP_201_CREATED
-)
+@router.post("/", response_model=bool, status_code=status.HTTP_201_CREATED)
 def create_new_course(
     course_in: NewCourseInput,
     detail_in: List[NewCourseDetailInput],
@@ -78,7 +76,7 @@ def create_new_course(
 
 @router.put(
     "/{course_id}",
-    response_model=CourseWithDetailsOutput,
+    response_model=bool,
     status_code=status.HTTP_200_OK,
 )
 def update_course(
@@ -91,13 +89,13 @@ def update_course(
 
 
 @router.delete(
-    "/{course_id}/detail/{course_detail_id}",
+    "/{course_id}/detail",
     response_model=bool,
     status_code=status.HTTP_200_OK,
 )
 def delete_course_detail(
     course_id: UUID,
-    course_detail_id: UUID,
+    course_detail_id: List[UUID] = Body(..., embed=True),
     user_id: UUID = Depends(get_current_user),
     controller: CourseController = Depends(get_course_controller),
 ):

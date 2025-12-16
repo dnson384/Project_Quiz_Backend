@@ -46,14 +46,17 @@ class NewCourseDetailInput(BaseModel):
     term: str
     definition: str
 
+
 # Sửa
 class UpdateCourseInput(BaseModel):
     course_name: str
+
 
 class UpdateCourseDetailInput(BaseModel):
     course_detail_id: UUID | None
     term: str
     definition: str
+
 
 class UpdateCourseRequest(BaseModel):
     course: Optional[UpdateCourseInput] = None

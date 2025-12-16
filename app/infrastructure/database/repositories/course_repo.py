@@ -254,7 +254,7 @@ class CoursesRepository(ICourseRepository):
         self,
         course_in: CreateNewCourseInput,
         detail_in: List[CreateNewCourseDetailInput],
-    ) -> CourseWithDetails:
+    ) -> bool:
         new_course_domain = Course.create_new_course(
             course_name=course_in.course_name, user_id=course_in.user_id
         )
@@ -313,24 +313,7 @@ class CoursesRepository(ICourseRepository):
             print("Lỗi xảy ra khi thêm course detail")
             raise e
 
-        return CourseWithDetails(
-            course=CourseOutput(
-                course_id=new_course_model.course_id,
-                course_name=new_course_model.course_name,
-                author_avatar_url=current_user.avatar_url,
-                author_username=current_user.username,
-                author_role=current_user.role,
-                num_of_terms=len(new_detail_model),
-            ),
-            course_detail=[
-                CourseDetailOutput(
-                    course_detail_id=detail.course_detail_id,
-                    term=detail.term,
-                    definition=detail.definition,
-                )
-                for detail in new_detail_model
-            ],
-        )
+        return True
 
     # Sửa
     def create_new_course_detail(
@@ -397,21 +380,15 @@ class CoursesRepository(ICourseRepository):
             print("Lỗi khi cập nhật tên học phần", e)
             raise e
 
-    def delete_course_detail(self, course_id: UUID, course_detail_id: UUID):
+    def delete_course_detail(self, course_id: UUID, course_detail_id: List[UUID]):
+        print(course_id, course_detail_id)
         try:
-            current_detail = (
-                self.db.query(CourseDetailModel)
-                .filter(CourseDetailModel.course_id == course_id)
-                .filter(CourseDetailModel.course_detail_id == course_detail_id)
-                .first()
+            self.db.query(CourseDetailModel).filter(
+                CourseDetailModel.course_id == course_id
+            ).filter(CourseDetailModel.course_detail_id.in_(course_detail_id)).delete(
+                synchronize_session=False
             )
 
-            if not current_detail:
-                raise CourseDetailsNotFoundErrorDomain(
-                    "Không tồn tại chi tiết học phần"
-                )
-
-            self.db.delete(current_detail)
             self.db.commit()
             return True
         except Exception as e:
