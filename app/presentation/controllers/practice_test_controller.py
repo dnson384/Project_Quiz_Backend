@@ -49,9 +49,52 @@ class PracticeTestController:
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
             )
 
-    def get_practice_test_detail_by_id(self, practice_test_id: str, count: int | None):
+    def get_practice_test_detail_by_id(self, practice_test_id: str):
         try:
             response = self.service.get_practice_test_detail_by_id(
+                practice_test_id=practice_test_id
+            )
+            practice_test = PracticeTestOutput(
+                practice_test_id=response.base_info.practice_test_id,
+                practice_test_name=response.base_info.practice_test_name,
+                author_avatar_url=response.base_info.author_avatar_url,
+                author_username=response.base_info.author_username,
+            )
+
+            questions: List[PracticeTestQuestions] = []
+            for question in response.questions:
+                question_data = Question(
+                    question_id=question.question.question_id,
+                    question_text=question.question.question_text,
+                    question_type=question.question.question_type,
+                )
+                options_data: List[QuestionOptions] = []
+                for option in question.options:
+                    options_data.append(
+                        QuestionOptions(
+                            option_id=option.option_id,
+                            option_text=option.option_text,
+                            is_correct=option.is_correct,
+                        )
+                    )
+
+                questions.append(
+                    PracticeTestQuestions(question=question_data, options=options_data)
+                )
+
+            return PracticeTestDetailOutput(
+                practice_test=practice_test, questions=questions
+            )
+        except PracticeTestsNotFoundError as e:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+        except Exception as e:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+            )
+        
+    def get_practice_test_random_detail_by_id(self, practice_test_id: str, count: int | None):
+        try:
+            response = self.service.get_practice_test_random_detail_by_id(
                 practice_test_id=practice_test_id, count=count
             )
             practice_test = PracticeTestOutput(

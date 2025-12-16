@@ -21,6 +21,7 @@ class UserOut(BaseModel):
     email: str
     role: UserRole
     avatar_url: str
+    login_method: str
 
 
 class UserResponse(BaseModel):
@@ -30,6 +31,7 @@ class UserResponse(BaseModel):
 
 
 class UpdateUserInput(BaseModel):
+    user_id: UUID
     username: Optional[str]
     email: Optional[str]
     role: Optional[UserRole]

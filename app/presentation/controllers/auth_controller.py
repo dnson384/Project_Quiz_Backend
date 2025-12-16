@@ -55,6 +55,7 @@ class AuthController:
                     email=user_auth.user.email,
                     role=user_auth.user.role,
                     avatar_url=user_auth.user.avatar_url,
+                    login_method=user_auth.user.login_method
                 ),
                 access_token=user_auth.access_token,
                 refresh_token=user_auth.refresh_token,

@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 from uuid import UUID
 from enum import Enum
+from app.application.dtos.user_dto import DTOUserOutput
 
 
 class UserRole(str, Enum):
@@ -25,15 +26,6 @@ class DTOUserCreate(BaseModel):
 class DTOLoginEmail(BaseModel):
     email: str
     plain_password: str
-
-
-class DTOUserOutput(BaseModel):
-    user_id: UUID
-    email: str
-    username: str
-    role: UserRole
-    avatar_url: str
-    login_method: str
 
 
 class DTOLoginSuccessResponse(BaseModel):

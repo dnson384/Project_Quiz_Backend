@@ -1,4 +1,11 @@
-from fastapi import Depends, APIRouter, status, Request
+from fastapi import (
+    Depends,
+    APIRouter,
+    status,
+    Request,
+    UploadFile,
+    File,
+)
 from uuid import UUID
 
 from app.presentation.controllers.user_controller import UserController
@@ -16,9 +23,17 @@ def get_me(req: Request, controller: UserController = Depends(get_user_controlle
     access_token = req.headers["Authorization"].split(" ")[-1]
 
     return controller.get_access_user(access_token=access_token)
-    
 
-@router.put("/update-me", status_code=status.HTTP_200_OK)
+
+@router.post("/upload-avatar", status_code=status.HTTP_201_CREATED)
+def upload_image(
+    file: UploadFile = File(...),
+    controller: UserController = Depends(get_user_controller),
+):
+    return controller.upload_temp_avatar(file)
+
+
+@router.put("/update-me", response_model=bool, status_code=status.HTTP_200_OK)
 def update_me(
     payload: UpdateUserInput,
     user_id: UUID = Depends(get_current_user),

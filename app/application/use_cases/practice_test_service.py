@@ -69,20 +69,19 @@ class PracticeTestService:
         except Exception as e:
             raise Exception("Không thể lấy ngẫu nhiên bài kiểm tra thử", e)
 
-    def check_valid_practice_test(self, user_id: UUID, practice_test_id: UUID):
-        try:
-            if not self.practice_test_repo.check_user_practice_test(
-                user_id, practice_test_id
-            ):
-                raise UserNotAllowError(
-                    f"Người dùng không được phép thao tác - {practice_test_id}"
-                )
-        except PracticeTestsNotFoundErrorDomain as e:
-            raise PracticeTestsNotFoundError(str(e))
-
-    def get_practice_test_detail_by_id(self, practice_test_id: str, count: int | None):
+    def get_practice_test_detail_by_id(self, practice_test_id: str):
         try:
             return self.practice_test_repo.get_practice_test_detail_by_id(
+                practice_test_id=practice_test_id
+            )
+        except PracticeTestsNotFoundErrorDomain as e:
+            raise PracticeTestsNotFoundError(str(e))
+        except Exception as e:
+            raise Exception("Không thể lấy thông tin chi tiết bài kiểm tra thử", e)
+        
+    def get_practice_test_random_detail_by_id(self, practice_test_id: str, count: int | None):
+        try:
+            return self.practice_test_repo.get_practice_test_random_detail_by_id(
                 practice_test_id=practice_test_id, count=count
             )
         except PracticeTestsNotFoundErrorDomain as e:

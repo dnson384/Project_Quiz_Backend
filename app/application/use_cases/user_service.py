@@ -30,7 +30,7 @@ class UserServices:
         )
 
     def update_me(self, user_id: UUID, payload: DTOUpdateUserInput):
-        updated_user = self.user_repo.update_user_by_id(
+        return self.user_repo.update_user_by_id(
             user_id,
             UpdateUserInput(
                 email=payload.email,
@@ -38,12 +38,4 @@ class UserServices:
                 role=payload.role,
                 avatar_url=payload.avatar_url,
             ),
-        )
-        return DTOUserOutput(
-            user_id=updated_user.user_id,
-            email=updated_user.email,
-            username=updated_user.username,
-            role=updated_user.role,
-            avatar_url=updated_user.avatar_url,
-            login_method=updated_user.login_method,
         )
