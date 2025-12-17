@@ -4,6 +4,7 @@ from uuid6 import uuid7
 from datetime import datetime
 from dataclasses import dataclass
 from enum import Enum
+from typing import Optional
 
 EMAIL_REGEX = re.compile(r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$")
 
@@ -17,7 +18,6 @@ class UserRole(str, Enum):
 class LoginMethod(str, Enum):
     EMAIL = "EMAIL"
     GOOGLE = "GOOGLE"
-    FACEBOOK = "FACEBOOK"
 
 
 class User:
@@ -32,9 +32,12 @@ class User:
         _created_at: datetime,
         _updated_at: datetime,
     ):
-        User.validate_update_profile(_username, _email, _role)
-        if not _login_method:
-            raise ValueError("Phương thức đăng nhập không được bỏ trống")
+        if not EMAIL_REGEX.match(_email):
+            raise ValueError("Email không đúng định dạng hoặc bị bỏ trống")
+        if _role not in ["ADMIN", "STUDENT", "TEACHER"]:
+            raise ValueError("Vai trò không hợp lệ")
+        if _login_method not in ["EMAIL", "GOOGLE"]:
+            raise ValueError("Phương thức đăng nhập không hợp lệ")
 
         self._user_id = _user_id
         self._username = _username
@@ -52,7 +55,7 @@ class User:
         email: str,
         role: str,
         login_method: str,
-        avatar_url: str = '/public/avatar_icon/owl.jpg',
+        avatar_url: str = "/public/avatar_icon/owl.jpg",
     ) -> "User":
         return cls(
             _user_id=uuid7(),
@@ -97,59 +100,35 @@ class User:
     def updated_at(self) -> datetime:
         return self._updated_at
 
-    def update_profile(
-        self, new_username: str = None, new_email: str = None, new_role: str = None
-    ):
-        username_to_check = new_username if new_username is not None else self._username
-        email_to_check = new_email if new_email is not None else self._email
-        role_to_check = new_role if new_role is not None else self._role
 
-        try:
-            self.validate_update_profile(
-                username_to_check, email_to_check, role_to_check
-            )
-        except ValueError as e:
-            # Ném lại lỗi với ngữ cảnh rõ ràng hơn
-            raise ValueError(f"Cập nhật không hợp lệ: {e}")
-
-        is_updated = False
-        if new_username is not None and new_username != self._username:
-            self._username = new_username
-            is_updated = True
-
-        if new_email is not None and new_email != self._email:
-            self._email = new_email
-            is_updated = True
-
-        if new_role is not None and new_role != self._role:
-            self._role = new_role
-            is_updated = True
-
-        if is_updated:
-            self._updated_at = datetime.utcnow()
-
-    @staticmethod
-    def validate_update_profile(username: str, email: str, role: str):
-        VALID_ROLES = ["ADMIN", "STUDENT", "TEACHER"]
-        if not username or len(username) < 3:
-            raise ValueError("Tên người dùng phải có ít nhất 3 ký tự")
-
-        if not email or not EMAIL_REGEX.match(email):
-            raise ValueError("Email không đúng định dạng hoặc bị bỏ trống")
-
-        if role not in VALID_ROLES:
-            raise ValueError(f"Vai trò không hợp lệ. Phải là một trong: {VALID_ROLES}")
+@dataclass(frozen=True)
+class UserOutput:
+    user_id: UUID
+    email: str
+    username: str
+    role: UserRole
+    avatar_url: str
+    login_method: str
 
 
 @dataclass(frozen=True)
-class CreateNewUserEmailInput:
+class NewUserEmailInput:
     email: str
-    username: str | None
-    plain_password: str
-    confirm_password: str
+    username: str
+    hashed_password: str
     role: UserRole
+    login_method: LoginMethod
+
 
 @dataclass(frozen=True)
 class LoginUserEmailInput:
     email: str
     plain_password: str
+
+
+@dataclass(frozen=True)
+class UpdateUserInput:
+    email: Optional[str]
+    username: Optional[str]
+    role: Optional[UserRole]
+    avatar_url: Optional[str]

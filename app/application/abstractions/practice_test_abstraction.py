@@ -50,6 +50,10 @@ class UpdateQuestionInput:
 
 class IPracticeTestRepository(ABC):
     @abstractmethod
+    def get_practice_tests_by_user_id(self, user_id: UUID) -> List[PracticeTestOutput]:
+        pass
+
+    @abstractmethod
     def get_practice_tests_by_keyword(
         self, keyword: str, cursor_id: Optional[str] = None
     ) -> List[PracticeTestOutput]:
@@ -60,17 +64,23 @@ class IPracticeTestRepository(ABC):
         pass
 
     @abstractmethod
-    def check_user_practice_test(self, user_id: UUID, practice_test_id: UUID) -> bool:
+    def check_user_practice_test(self, user_id: UUID, practice_test_id: UUID):
         pass
 
     @abstractmethod
     def get_practice_test_detail_by_id(
+        self, practice_test_id: str
+    ) -> PraceticeTestWithDetailsResponse:
+        pass
+
+    @abstractmethod
+    def get_practice_test_random_detail_by_id(
         self, practice_test_id: str, count: int | None
     ) -> PraceticeTestWithDetailsResponse:
         pass
 
     @abstractmethod
-    def create_new_practice_test(self, payload: NewPracticeTestInput) -> UUID:
+    def create_new_practice_test(self, payload: NewPracticeTestInput) -> bool:
         pass
 
     @abstractmethod

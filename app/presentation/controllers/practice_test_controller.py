@@ -5,6 +5,7 @@ from typing import List
 
 from app.application.use_cases.practice_test_service import PracticeTestService
 from app.application.dtos.practice_test_dto import (
+    DTOPracticeTestOutput,
     # POST
     DTOBaseInfoInput,
     DTOQuestionBaseInput,
@@ -22,6 +23,7 @@ from app.application.exceptions import (
     PracticeTestsNotFoundError,
     QuestionNotFoundError,
     OptionNotFoundError,
+    UserNotAllowError,
 )
 
 from app.presentation.schemas.practice_test_schema import (
@@ -39,6 +41,23 @@ class PracticeTestController:
     def __init__(self, service: PracticeTestService):
         self.service = service
 
+    def get_user_practice_test(self, user_id: UUID):
+        try:
+            practiceTests: List[DTOPracticeTestOutput] = (
+                self.service.get_user_practice_test(user_id)
+            )
+            return [
+                PracticeTestOutput(
+                    practice_test_id=practiceTest.practice_test_id,
+                    practice_test_name=practiceTest.practice_test_name,
+                    author_avatar_url=practiceTest.author_avatar_url,
+                    author_username=practiceTest.author_username,
+                )
+                for practiceTest in practiceTests
+            ]
+        except PracticeTestsNotFoundError as e:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+
     def get_random_practice_test(self):
         try:
             return self.service.get_random_practice_test()
@@ -49,10 +68,10 @@ class PracticeTestController:
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
             )
 
-    def get_practice_test_detail_by_id(self, practice_test_id: str, count: int | None):
+    def get_practice_test_detail_by_id(self, practice_test_id: str):
         try:
             response = self.service.get_practice_test_detail_by_id(
-                practice_test_id=practice_test_id, count=count
+                practice_test_id=practice_test_id
             )
             practice_test = PracticeTestOutput(
                 practice_test_id=response.base_info.practice_test_id,
@@ -122,12 +141,10 @@ class PracticeTestController:
             base_info=base_info_dto, questions=questions_dto
         )
 
+
         try:
-            practice_test_id = self.service.create_new_practice_test(
+            return self.service.create_new_practice_test(
                 payload=new_practice_test_dto
-            )
-            return self.get_practice_test_detail_by_id(
-                practice_test_id=practice_test_id, count=None
             )
         except Exception as e:
             raise HTTPException(
@@ -182,6 +199,8 @@ class PracticeTestController:
             return self.get_practice_test_detail_by_id(
                 practice_test_id=practice_test_id, count=None
             )
+        except UserNotAllowError:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
         except PracticeTestsNotFoundError as e:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
@@ -192,6 +211,8 @@ class PracticeTestController:
             return self.service.delete_option(
                 user_id, practice_test_id, question_id, option_id
             )
+        except UserNotAllowError:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
         except PracticeTestsNotFoundError as e:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
         except OptionNotFoundError as e:
@@ -202,6 +223,8 @@ class PracticeTestController:
     ) -> bool:
         try:
             return self.service.delete_question(user_id, practice_test_id, question_id)
+        except UserNotAllowError:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
         except PracticeTestsNotFoundError as e:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
         except QuestionNotFoundError as e:
@@ -210,5 +233,7 @@ class PracticeTestController:
     def delete_practice_test(self, user_id: UUID, practice_test_id: UUID) -> bool:
         try:
             return self.service.delete_practice_test(user_id, practice_test_id)
+        except UserNotAllowError:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
         except PracticeTestsNotFoundError as e:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))

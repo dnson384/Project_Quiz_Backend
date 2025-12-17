@@ -1,21 +1,26 @@
-from uuid6 import uuid7
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from typing import Dict
 
-from app.domain.exceptions.auth_exceptions import (
-    EmailAlreadyExistsError,
-    AccountNotFoundError,
-    InvalidCredentialsError,
-    WrongAuthMethodError,
-)
 from app.domain.entities.user.user_entity import (
-    CreateNewUserEmailInput,
-    LoginUserEmailInput,
-    User,
+    NewUserEmailInput,
+    UserOutput,
 )
-from app.domain.entities.user.user_email_entity import UserEmail
-from app.domain.entities.token.refresh_token_entity import RefreshToken
+from app.domain.entities.user.user_email_entity import UserEmailOutput
+from app.domain.entities.token.refresh_token_entity import (
+    RefreshToken,
+)
 
+from app.application.dtos.auth_dto import (
+    DTOUserCreate,
+    DTOLoginEmail,
+    DTOUserOutput,
+    DTOLoginSuccessResponse,
+)
+from app.application.exceptions import (
+    EmailExistedError,
+    InvalidCredentialsError,
+    AccountNotFoundError,
+)
 from app.application.abstractions.security_abstraction import ISecurityService
 from app.application.abstractions.user_abstraction import IUserRepository
 from app.application.abstractions.refresh_token_abstraction import (
@@ -35,75 +40,85 @@ class AuthService(IAuthService):
         self.token_repo = token_repo
         self.security_service = security_service
 
-    def register_user_email(self, user_in: CreateNewUserEmailInput) -> User:
+    def register_user_email(self, user_in: DTOUserCreate) -> DTOUserOutput:
         # Kiểm tra email tồn tại
-        if self.user_repo.get_user_by_email(user_in.email):
-            raise EmailAlreadyExistsError("Email đã được đăng ký")
+        if self.user_repo.check_user_email_existed(user_in.email):
+            raise EmailExistedError("Email đã được đăng ký")
 
         hashed_password = self.security_service.hash_password(user_in.plain_password)
 
-        new_user = User.create_new_user(
-            username=user_in.username,
+        new_user_domain = NewUserEmailInput(
             email=user_in.email,
+            username=user_in.username,
+            hashed_password=hashed_password,
             role=user_in.role,
-            login_method="EMAIL",
+            login_method=user_in.login_method,
         )
 
-        new_user_email = UserEmail.create_new_user_email(
-            user_id=new_user.user_id, hashed_password=hashed_password
+        new_user: UserOutput = self.user_repo.create_new_user_email(new_user_domain)
+        return DTOUserOutput(
+            user_id=new_user.user_id,
+            email=new_user.email,
+            username=user_in.username,
+            role=user_in.role,
+            avatar_url=new_user.avatar_url,
+            login_method=new_user.login_method,
         )
 
-        try:
-            saved_user = self.user_repo.create_new_user_email(new_user, new_user_email)
-            return saved_user
-        except Exception as e:
-            raise Exception(f"Không thể tạo người dùng: {e}")
-
-    def login_user_email(self, user_in: LoginUserEmailInput) -> Dict:
+    def login_user_email(self, user_in: DTOLoginEmail):
         # Kiểm tra tài khoản tồn tại
-        user = self.user_repo.get_user_by_email(user_in.email)
-        if not user:
-            raise AccountNotFoundError("Tài khoản chưa tồn tại")
-
-        # Kiểm tra tài khoản có phương thức là EMAIL
-        if not user.login_method == "EMAIL":
-            raise WrongAuthMethodError("Tài khoản được đăng nhập bằng phương thức khác")
+        existed_user: UserOutput = self.user_repo.check_user_email_existed(
+            user_in.email
+        )
+        if not existed_user or existed_user.login_method != "EMAIL":
+            raise InvalidCredentialsError("Email hoặc mật khẩu không chính xác")
 
         # Kiểm tra mật khẩu
-        user_email_auth = self.user_repo.get_user_email_auth(user.user_id)
+        user_email_auth: UserEmailOutput = self.user_repo.get_user_email_auth(
+            existed_user.user_id
+        )
         if not self.security_service.verify_password(
             user_in.plain_password, user_email_auth.hashed_password
         ):
             raise InvalidCredentialsError("Email hoặc mật khẩu không chính xác")
 
-        token_payload = {"sub": str(user.user_id), "role": str(user.role)}
-
         # Tạo Access Token
-        access_token = self.security_service.create_access_token(token_payload)
-
-        # Tạo Refresh Token
-        refresh_token = self.security_service.create_refresh_token(token_payload)
-
-        # Lưu thông tin refresh token
-        refresh_payload = self.security_service.decode_refresh_token(refresh_token)
-        jti = refresh_payload.get("jti")
-        expires_at = datetime.fromtimestamp(refresh_payload.get("exp"), tz=timezone.utc)
-        issued_at = datetime.fromtimestamp(refresh_payload.get("iat"), tz=timezone.utc)
-
-        self.token_repo.save_refresh_token_jti(
-            payload=RefreshToken(
-                _jti=jti,
-                _user_id=user.user_id,
-                _expires_at=expires_at,
-                _issued_at=issued_at,
-            )
-        )
-
-        return {
-            "user_data": user,
-            "access_token": access_token,
-            "refresh_token": refresh_token,
+        access_token_payload = {
+            "sub": str(existed_user.user_id),
+            "role": str(existed_user.role),
         }
+        access_token = self.security_service.create_access_token(access_token_payload)
+
+        # Tạo và lưu Refresh Token
+        new_rt_domain = RefreshToken.create_new_refresh_token(
+            user_id=existed_user.user_id,
+            expires_at=datetime.now(timezone.utc) + timedelta(days=30),
+            issued_at=datetime.now(timezone.utc),
+        )
+        refresh_token_payload = {
+            "jti": str(new_rt_domain.jti),
+            "sub": str(existed_user.user_id),
+            "role": str(existed_user.role),
+            "exp": new_rt_domain.expires_at,
+            "iat": new_rt_domain.issued_at,
+        }
+        refresh_token = self.security_service.create_refresh_token(
+            refresh_token_payload
+        )
+        self.token_repo.save_refresh_token(new_rt_domain)
+
+        return DTOLoginSuccessResponse(
+            user=DTOUserOutput(
+                user_id=existed_user.user_id,
+                email=existed_user.email,
+                username=existed_user.username,
+                role=existed_user.role,
+                avatar_url=existed_user.avatar_url,
+                login_method=existed_user.login_method,
+            ),
+            access_token=access_token,
+            refresh_token=refresh_token,
+        )
 
     def logout_user(self, refresh_token) -> bool:
         payload = self.security_service.decode_refresh_token(refresh_token)

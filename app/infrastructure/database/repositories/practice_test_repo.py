@@ -76,6 +76,30 @@ class PracticeTestRepository(IPracticeTestRepository):
     def __init__(self, db: Session):
         self.db = db
 
+    def get_practice_tests_by_user_id(self, user_id: UUID) -> List[PracticeTestOutput]:
+        practice_tests = (
+            self.db.query(
+                PracticeTestModel.practice_test_id,
+                PracticeTestModel.practice_test_name,
+                UserModel.avatar_url,
+                UserModel.username,
+            )
+            .join(UserModel, PracticeTestModel.practice_test_user)
+            .filter(PracticeTestModel.user_id == user_id)
+            .all()
+        )
+        if not practice_tests:
+            raise PracticeTestsNotFoundErrorDomain("Người dùng không có bài kiểm tra")
+        return [
+            PracticeTestOutput(
+                practice_test_id=practice_test.practice_test_id,
+                practice_test_name=practice_test.practice_test_name,
+                author_avatar_url=practice_test.avatar_url,
+                author_username=practice_test.username,
+            )
+            for practice_test in practice_tests
+        ]
+
     def get_practice_tests_by_keyword(
         self, keyword: str, cursor_id: Optional[str] = None
     ) -> List[PracticeTestOutput]:
@@ -146,7 +170,7 @@ class PracticeTestRepository(IPracticeTestRepository):
             print("Có lỗi xảy ra khi lấy bài kiểm tra thử ngẫu nhiên", e)
             return []
 
-    def check_user_practice_test(self, user_id: UUID, practice_test_id: UUID) -> bool:
+    def check_user_practice_test(self, user_id: UUID, practice_test_id: UUID):
         if (
             not self.db.query(PracticeTestModel)
             .filter(PracticeTestModel.practice_test_id == practice_test_id)
@@ -162,6 +186,75 @@ class PracticeTestRepository(IPracticeTestRepository):
         )
 
     def get_practice_test_detail_by_id(
+        self, practice_test_id: str
+    ) -> PraceticeTestWithDetailsResponse:
+        test_query = (
+            self.db.query(
+                PracticeTestModel.practice_test_id,
+                PracticeTestModel.practice_test_name,
+                UserModel.username.label("author_username"),
+                UserModel.avatar_url.label("author_avatar_url"),
+            )
+            .filter(PracticeTestModel.practice_test_id == practice_test_id)
+            .join(UserModel, UserModel.user_id == PracticeTestModel.user_id)
+        ).first()
+
+        if not test_query:
+            raise PracticeTestsNotFoundErrorDomain(
+                f"Không tồn tại bài kiểm tra {practice_test_id}"
+            )
+
+        base_info_domain = PracticeTestOutput(
+            practice_test_id=test_query.practice_test_id,
+            practice_test_name=test_query.practice_test_name,
+            author_avatar_url=test_query.author_avatar_url,
+            author_username=test_query.author_username,
+        )
+
+        questions_id_query = (
+            self.db.query(PracticeTestQuestionModel.question_id)
+            .filter(PracticeTestQuestionModel.practice_test_id == practice_test_id)
+            .all()
+        )
+
+        questions_ids = [qid[0] for qid in questions_id_query]
+
+        question_query = (
+            self.db.query(PracticeTestQuestionModel)
+            .filter(PracticeTestQuestionModel.question_id.in_(questions_ids))
+            .options(selectinload(PracticeTestQuestionModel.question_anwser_opt))
+            .all()
+        )
+
+        questions_map = {q.question_id: q for q in question_query}
+
+        questions_domain: List[QuestionDetailOutput] = []
+        for question_id in questions_ids:
+            if question_id in questions_map:
+                question = questions_map[question_id]
+                questions_domain.append(
+                    QuestionDetailOutput(
+                        question=QuestionOutput(
+                            question_id=question.question_id,
+                            question_text=question.question_text,
+                            question_type=question.question_type,
+                        ),
+                        options=[
+                            AnswerOptionOutput(
+                                option_id=option.option_id,
+                                option_text=option.option_text,
+                                is_correct=option.is_correct,
+                            )
+                            for option in question.question_anwser_opt
+                        ],
+                    )
+                )
+
+        return PraceticeTestWithDetailsResponse(
+            base_info=base_info_domain, questions=questions_domain
+        )
+
+    def get_practice_test_random_detail_by_id(
         self, practice_test_id: str, count: int
     ) -> PraceticeTestWithDetailsResponse:
         test_query = (
@@ -249,6 +342,7 @@ class PracticeTestRepository(IPracticeTestRepository):
                 new_question_domain: PracticeTestQuestion = Mapper.new_question_domain(
                     new_practice_test_domain.practice_test_id, question_payload.question
                 )
+                print("pass")
                 new_question_model: PracticeTestQuestionModel = (
                     Mapper.question_domain_to_model(new_question_domain)
                 )
@@ -264,7 +358,7 @@ class PracticeTestRepository(IPracticeTestRepository):
                 new_questions_model.append(new_question_model)
             self.db.add_all(new_questions_model)
             self.db.commit()
-            return new_practice_test_model.practice_test_id
+            return True
         except Exception as e:
             print("Lỗi khi thêm bài kiểm tra thử mới", e)
             self.db.rollback()

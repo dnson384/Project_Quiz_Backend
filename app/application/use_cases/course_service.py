@@ -28,6 +28,7 @@ from app.application.dtos.course_dto import (
     DTOUpdateCourseRequest,
 )
 from app.application.exceptions import (
+    UserNotAllowError,
     UserNotFoundError,
     CourseNotFoundError,
     CourseDetailNotFoundError,
@@ -43,6 +44,25 @@ class CourseService:
     def __init__(self, course_repo: ICourseRepository, user_repo: IUserRepository):
         self.course_repo = course_repo
         self.user_repo = user_repo
+
+    def get_user_course(self, user_id: UUID):
+        try:
+            courses: List[CourseOutput] = self.course_repo.get_courses_by_user_id(
+                user_id
+            )
+            return [
+                DTOCourseOutput(
+                    course_id=course.course_id,
+                    course_name=course.course_name,
+                    author_avatar_url=course.author_avatar_url,
+                    author_username=course.author_username,
+                    author_role=course.author_role,
+                    num_of_terms=course.num_of_terms,
+                )
+                for course in courses
+            ]
+        except CoursesNotFoundErrorDomain as e:
+            raise CourseNotFoundError(str(e))
 
     def get_random_course(self):
         try:
@@ -132,38 +152,23 @@ class CourseService:
                     )
                 )
 
-            response: CourseWithDetails = self.course_repo.create_new_course(
+            return self.course_repo.create_new_course(
                 course_in_domain, detail_in_domain
             )
-
-            dto_course = DTOCourseOutput(
-                course_id=response.get("course").course_id,
-                course_name=response.get("course").course_name,
-                author_avatar_url=response.get("course").author_avatar_url,
-                author_username=response.get("course").author_username,
-                author_role=response.get("course").author_role,
-                num_of_terms=response.get("course").num_of_terms,
-            )
-
-            dto_detail: List[DTOCourseDetailOutput] = []
-            for detail in response.get("course_detail"):
-                dto_detail.append(
-                    DTOCourseDetailOutput(
-                        course_detail_id=detail.course_detail_id,
-                        term=detail.term,
-                        definition=detail.definition,
-                    )
-                )
-
-            return DTOCourseWithDetails(course=dto_course, course_detail=dto_detail)
         except Exception as e:
             raise Exception("Không thể thêm mới học phần - service", e)
 
-    def update_course(self, course_id: UUID, payload: DTOUpdateCourseRequest):
+    def check_user_course(self, user_id: UUID, course_id: UUID):
         try:
-            self.course_repo.get_course_by_id(course_id)
-        except:
-            raise CourseNotFoundError("Học phần không tồn tại")
+            if not self.course_repo.check_user_course(user_id, course_id):
+                raise UserNotAllowError()
+        except CoursesNotFoundErrorDomain as e:
+            raise CourseNotFoundError(str(e))
+
+    def update_course(
+        self, user_id: UUID, course_id: UUID, payload: DTOUpdateCourseRequest
+    ):
+        self.check_user_course(user_id, course_id)
 
         try:
             if payload.course:
@@ -197,25 +202,14 @@ class CourseService:
                     )
         except Exception as e:
             raise Exception("Lỗi khi cập nhật chi tiết học phần", e)
-        return self.get_course_detail_by_id(course_id=course_id)
+        return True
 
-    def delete_course_detail(self, course_id: UUID, course_detail_id: UUID) -> bool:
-        try:
-            self.course_repo.get_course_by_id(course_id)
-        except:
-            raise CourseNotFoundError("Không tồn tại học phần")
+    def delete_course_detail(
+        self, user_id: UUID, course_id: UUID, course_detail_id: List[UUID]
+    ) -> bool:
+        self.check_user_course(user_id, course_id)
+        return self.course_repo.delete_course_detail(course_id, course_detail_id)
 
-        try:
-            return self.course_repo.delete_course_detail(course_id, course_detail_id)
-        except CourseDetailsNotFoundErrorDomain as e:
-            raise CourseDetailNotFoundError(str(e))
-        except Exception as e:
-            raise Exception("SERVICE - Không thể xoá chi tiết học phần", e)
-
-    def delete_course(self, course_id: UUID):
-        try:
-            return self.course_repo.delete_course(course_id)
-        except CoursesNotFoundErrorDomain as e:
-            raise CourseNotFoundError(str(e))
-        except Exception as e:
-            raise Exception("SERVICE - Không thể xoá học phần", e)
+    def delete_course(self, user_id: UUID, course_id: UUID):
+        self.check_user_course(user_id, course_id)
+        return self.course_repo.delete_course(course_id)

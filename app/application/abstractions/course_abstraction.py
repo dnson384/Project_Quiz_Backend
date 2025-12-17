@@ -21,6 +21,10 @@ class CourseWithDetailsResponse(TypedDict):
 
 class ICourseRepository(ABC):
     @abstractmethod
+    def get_courses_by_user_id(self, user_id: UUID) -> List[CourseOutput]:
+        pass
+
+    @abstractmethod
     def get_courses_by_keyword(
         self, keyword: str, cursor_id: Optional[str] = None
     ) -> List[CourseOutput]:
@@ -31,7 +35,7 @@ class ICourseRepository(ABC):
         pass
 
     @abstractmethod
-    def get_course_by_id(self, course_id: UUID) -> CourseOutput:
+    def check_user_course(self, user_ud: UUID, course_id: UUID):
         pass
 
     @abstractmethod
@@ -43,7 +47,7 @@ class ICourseRepository(ABC):
         self,
         course_in: CreateNewCourseInput,
         detail_in: List[CreateNewCourseDetailInput],
-    ) -> CourseWithDetailsResponse:
+    ) -> bool:
         pass
 
     @abstractmethod
@@ -61,7 +65,7 @@ class ICourseRepository(ABC):
         pass
 
     @abstractmethod
-    def delete_course_detail(self, course_id: UUID, course_detail_id: UUID):
+    def delete_course_detail(self, course_id: UUID, course_detail_id: List[UUID]):
         pass
 
     @abstractmethod

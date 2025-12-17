@@ -39,6 +39,43 @@ class CoursesRepository(ICourseRepository):
     def __init__(self, db: Session):
         self.db = db
 
+    def get_courses_by_user_id(self, user_id: UUID) -> List[CourseOutput]:
+        user_courses = (
+            self.db.query(
+                CourseModel.course_id,
+                CourseModel.course_name,
+                UserModel.username,
+                UserModel.avatar_url,
+                UserModel.role,
+                func.count(CourseDetailModel.course_detail_id).label("num_of_terms"),
+            )
+            .join(UserModel, CourseModel.course_user)
+            .join(CourseDetailModel, CourseModel.course_detail)
+            .filter(CourseModel.user_id == user_id)
+            .filter(CourseDetailModel.course_id == CourseModel.course_id)
+            .group_by(
+                CourseModel.course_id,
+                CourseModel.course_name,
+                UserModel.username,
+                UserModel.avatar_url,
+                UserModel.role,
+            )
+            .all()
+        )
+        if not user_courses:
+            raise CoursesNotFoundErrorDomain("Người dùng không có học phần")
+        return [
+            CourseOutput(
+                course_id=course.course_id,
+                course_name=course.course_name,
+                author_avatar_url=course.avatar_url,
+                author_username=course.username,
+                author_role=course.role,
+                num_of_terms=course.num_of_terms,
+            )
+            for course in user_courses
+        ]
+
     def get_courses_by_keyword(
         self, keyword: str, cursor_id: Optional[str] = None
     ) -> List[CourseOutput]:
@@ -146,40 +183,20 @@ class CoursesRepository(ICourseRepository):
             print("Có lỗi xảy ra khi lấy học phần ngẫu nhiên", e)
             return []
 
-    def get_course_by_id(self, course_id: UUID) -> CourseOutput:
-        try:
-            course_query = (
-                self.db.query(
-                    CourseModel.course_id,
-                    CourseModel.course_name,
-                    UserModel.avatar_url,
-                    UserModel.username,
-                    UserModel.role,
-                )
-                .filter(CourseModel.course_id == course_id)
-                .join(UserModel, UserModel.user_id == CourseModel.user_id)
-                .first()
-            )
-
-            detail_query = (
-                self.db.query(
-                    CourseDetailModel.course_detail_id,
-                )
-                .filter(CourseDetailModel.course_id == course_id)
-                .all()
-            )
-
-            return CourseOutput(
-                course_id=course_query.course_id,
-                course_name=course_query.course_name,
-                author_avatar_url=course_query.avatar_url,
-                author_username=course_query.username,
-                author_role=course_query.role,
-                num_of_terms=len(detail_query),
-            )
-        except Exception as e:
-            print("Có lỗi xảy ra khi lấy thông tin học phần", e)
-            return None
+    def check_user_course(self, user_id: UUID, course_id: UUID):
+        if (
+            not self.db.query(CourseModel)
+            .filter(CourseModel.course_id == course_id)
+            .first()
+        ):
+            raise CoursesNotFoundErrorDomain("Không tồn tại học phần")
+        return (
+            self.db.query(CourseModel)
+            .join(UserModel, CourseModel.course_user)
+            .filter(UserModel.user_id == user_id)
+            .filter(CourseModel.course_id == course_id)
+            .first()
+        )
 
     def get_course_detail_by_id(self, course_id: Optional[str]) -> CourseWithDetails:
         try:
@@ -237,7 +254,7 @@ class CoursesRepository(ICourseRepository):
         self,
         course_in: CreateNewCourseInput,
         detail_in: List[CreateNewCourseDetailInput],
-    ) -> CourseWithDetails:
+    ) -> bool:
         new_course_domain = Course.create_new_course(
             course_name=course_in.course_name, user_id=course_in.user_id
         )
@@ -296,24 +313,7 @@ class CoursesRepository(ICourseRepository):
             print("Lỗi xảy ra khi thêm course detail")
             raise e
 
-        return CourseWithDetails(
-            course=CourseOutput(
-                course_id=new_course_model.course_id,
-                course_name=new_course_model.course_name,
-                author_avatar_url=current_user.avatar_url,
-                author_username=current_user.username,
-                author_role=current_user.role,
-                num_of_terms=len(new_detail_model),
-            ),
-            course_detail=[
-                CourseDetailOutput(
-                    course_detail_id=detail.course_detail_id,
-                    term=detail.term,
-                    definition=detail.definition,
-                )
-                for detail in new_detail_model
-            ],
-        )
+        return True
 
     # Sửa
     def create_new_course_detail(
@@ -380,21 +380,15 @@ class CoursesRepository(ICourseRepository):
             print("Lỗi khi cập nhật tên học phần", e)
             raise e
 
-    def delete_course_detail(self, course_id: UUID, course_detail_id: UUID):
+    def delete_course_detail(self, course_id: UUID, course_detail_id: List[UUID]):
+        print(course_id, course_detail_id)
         try:
-            current_detail = (
-                self.db.query(CourseDetailModel)
-                .filter(CourseDetailModel.course_id == course_id)
-                .filter(CourseDetailModel.course_detail_id == course_detail_id)
-                .first()
+            self.db.query(CourseDetailModel).filter(
+                CourseDetailModel.course_id == course_id
+            ).filter(CourseDetailModel.course_detail_id.in_(course_detail_id)).delete(
+                synchronize_session=False
             )
 
-            if not current_detail:
-                raise CourseDetailsNotFoundErrorDomain(
-                    "Không tồn tại chi tiết học phần"
-                )
-
-            self.db.delete(current_detail)
             self.db.commit()
             return True
         except Exception as e:

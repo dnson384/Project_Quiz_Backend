@@ -1,4 +1,5 @@
 from uuid import UUID
+from dataclasses import dataclass
 
 
 class UserEmail:
@@ -34,7 +35,8 @@ class UserEmail:
     def hashed_password(self) -> str:
         return self._hashed_password
 
-    def change_password(self, new_hashed_password: str):
-        if not new_hashed_password:
-            raise ValueError("Mật khẩu mới không được để trống")
-        self._hashed_password = new_hashed_password
+
+@dataclass(frozen=True)
+class UserEmailOutput:
+    user_id: UUID
+    hashed_password: str

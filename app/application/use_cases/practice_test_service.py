@@ -5,6 +5,7 @@ from uuid import UUID
 from app.domain.entities.practice_test.practice_test_entity import (
     NewBaseInfoInput,
     UpdateBaseInfoInput,
+    PracticeTestOutput,
 )
 from app.domain.entities.practice_test.practice_test_question_entity import (
     NewQuestionBaseInput,
@@ -24,6 +25,7 @@ from app.application.abstractions.practice_test_abstraction import (
     IPracticeTestRepository,
 )
 from app.application.dtos.practice_test_dto import (
+    DTOPracticeTestOutput,
     DTONewPracticeTestInput,
     DTOUpdatePracticeTestInput,
 )
@@ -58,6 +60,23 @@ class PracticeTestService:
     def __init__(self, practice_test_repo: IPracticeTestRepository):
         self.practice_test_repo = practice_test_repo
 
+    def get_user_practice_test(self, user_id: UUID):
+        try:
+            practice_tests: List[PracticeTestOutput] = (
+                self.practice_test_repo.get_practice_tests_by_user_id(user_id)
+            )
+            return [
+                DTOPracticeTestOutput(
+                    practice_test_id=practice_test.practice_test_id,
+                    practice_test_name=practice_test.practice_test_name,
+                    author_avatar_url=practice_test.author_avatar_url,
+                    author_username=practice_test.author_username,
+                )
+                for practice_test in practice_tests
+            ]
+        except PracticeTestsNotFoundErrorDomain as e:
+            raise PracticeTestsNotFoundError(str(e))
+
     def get_random_practice_test(self):
         try:
             sample_practice_tests = self.practice_test_repo.get_random_practice_test()
@@ -69,20 +88,20 @@ class PracticeTestService:
         except Exception as e:
             raise Exception("Không thể lấy ngẫu nhiên bài kiểm tra thử", e)
 
-    def check_valid_practice_test(self, user_id: UUID, practice_test_id: UUID):
+    def get_practice_test_detail_by_id(self, practice_test_id: str):
         try:
-            if not self.practice_test_repo.check_user_practice_test(
-                user_id, practice_test_id
-            ):
-                raise UserNotAllowError(
-                    f"Người dùng không được phép thao tác - {practice_test_id}"
-                )
+            print(practice_test_id)
+            return self.practice_test_repo.get_practice_test_detail_by_id(
+                practice_test_id=practice_test_id
+            )
         except PracticeTestsNotFoundErrorDomain as e:
             raise PracticeTestsNotFoundError(str(e))
-
-    def get_practice_test_detail_by_id(self, practice_test_id: str, count: int | None):
+        except Exception as e:
+            raise Exception("Không thể lấy thông tin chi tiết bài kiểm tra thử", e)
+        
+    def get_practice_test_random_detail_by_id(self, practice_test_id: str, count: int | None):
         try:
-            return self.practice_test_repo.get_practice_test_detail_by_id(
+            return self.practice_test_repo.get_practice_test_random_detail_by_id(
                 practice_test_id=practice_test_id, count=count
             )
         except PracticeTestsNotFoundErrorDomain as e:
@@ -114,12 +133,21 @@ class PracticeTestService:
             questions_domain.append(
                 NewQuestionInput(question=question_domain, options=options_domain)
             )
-
+        
         return self.practice_test_repo.create_new_practice_test(
             payload=NewPracticeTestInput(
                 base_info=base_info_domain, questions=questions_domain
             )
         )
+
+    def check_valid_practice_test(self, user_id: UUID, practice_test_id: UUID):
+        try:
+            if not self.practice_test_repo.check_user_practice_test(
+                user_id, practice_test_id
+            ):
+                raise UserNotAllowError()
+        except PracticeTestsNotFoundErrorDomain as e:
+            raise PracticeTestsNotFoundError(str(e))
 
     def update_practice_test(
         self, user_id: UUID, practice_test_id: UUID, payload: DTOUpdatePracticeTestInput
@@ -184,23 +212,13 @@ class PracticeTestService:
         self, user_id: UUID, practice_test_id: UUID, question_id: UUID, option_id: UUID
     ):
         self.check_valid_practice_test(user_id, practice_test_id)
-
-        try:
-            return self.practice_test_repo.delete_answer_option(
-                practice_test_id, question_id, option_id
-            )
-        except OptionNotFoundErrorDomain as e:
-            raise OptionNotFoundError(str(e))
+        return self.practice_test_repo.delete_answer_option(
+            practice_test_id, question_id, option_id
+        )
 
     def delete_question(self, user_id: UUID, practice_test_id: UUID, question_id: UUID):
         self.check_valid_practice_test(user_id, practice_test_id)
-
-        try:
-            return self.practice_test_repo.delete_question(
-                practice_test_id, question_id
-            )
-        except QuestionNotFoundErrorDomain as e:
-            raise QuestionNotFoundError(str(e))
+        return self.practice_test_repo.delete_question(practice_test_id, question_id)
 
     def delete_practice_test(self, user_id: UUID, practice_test_id: UUID):
         self.check_valid_practice_test(user_id, practice_test_id)
