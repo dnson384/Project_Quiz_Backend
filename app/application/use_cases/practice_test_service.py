@@ -90,7 +90,6 @@ class PracticeTestService:
 
     def get_practice_test_detail_by_id(self, practice_test_id: str):
         try:
-            print(practice_test_id)
             return self.practice_test_repo.get_practice_test_detail_by_id(
                 practice_test_id=practice_test_id
             )
