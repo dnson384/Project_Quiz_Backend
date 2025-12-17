@@ -68,10 +68,10 @@ class PracticeTestController:
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
             )
 
-    def get_practice_test_detail_by_id(self, practice_test_id: str, count: int | None):
+    def get_practice_test_detail_by_id(self, practice_test_id: str):
         try:
             response = self.service.get_practice_test_detail_by_id(
-                practice_test_id=practice_test_id, count=count
+                practice_test_id=practice_test_id
             )
             practice_test = PracticeTestOutput(
                 practice_test_id=response.base_info.practice_test_id,
@@ -141,12 +141,10 @@ class PracticeTestController:
             base_info=base_info_dto, questions=questions_dto
         )
 
+
         try:
-            practice_test_id = self.service.create_new_practice_test(
+            return self.service.create_new_practice_test(
                 payload=new_practice_test_dto
-            )
-            return self.get_practice_test_detail_by_id(
-                practice_test_id=practice_test_id, count=None
             )
         except Exception as e:
             raise HTTPException(

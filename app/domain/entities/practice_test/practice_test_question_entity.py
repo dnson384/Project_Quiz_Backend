@@ -25,7 +25,7 @@ class PracticeTestQuestion:
     def create_new_question(
         cls, practice_test_id: UUID, question_text: str, question_type: str
     ) -> "PracticeTestQuestion":
-        if not question_type in ["MULTIPLE_CHOICE", "TRUE_FALSE"]:
+        if not question_type in ["SINGLE_CHOICE", "MULTIPLE_CHOICE", "TRUE_FALSE"]:
             raise ValueError("Giá trị loại câu hỏi không hợp lệ")
 
         return cls(
@@ -51,32 +51,11 @@ class PracticeTestQuestion:
     def question_type(self) -> str:
         return self._question_type
 
-    def update_question(
-        self, new_question_text: str = None, new_question_type: str = None
-    ):
-        question_text_to_check = (
-            new_question_text if new_question_text is not None else self._question_text
-        )
-        question_type_to_check = (
-            new_question_type if new_question_type is not None else self._question_type
-        )
-
-        try:
-            self.validate_question(question_text_to_check, question_type_to_check)
-        except ValueError as e:
-            raise ValueError(f"Cập nhật không hợp lệ: {e}")
-
-        if new_question_text is not None and new_question_text != self._question_text:
-            self._question_text = new_question_text
-
-        if new_question_type is not None and new_question_type != self._question_type:
-            self._question_type = new_question_type
-
     @staticmethod
     def validate_question(question_text: str, question_type: str):
         if not question_text:
             raise ValueError("Không có câu hỏi")
-        if question_type not in ["MULTIPLE_CHOICE", "TRUE_FALSE", "WRITTEN"]:
+        if question_type not in ["SINGLE_CHOICE", "MULTIPLE_CHOICE", "TRUE_FALSE"]:
             raise ValueError("Loại câu hỏi không hợp lệ")
 
 
@@ -91,6 +70,7 @@ class QuestionOutput:
 class NewQuestionBaseInput:
     question_text: str
     question_type: str
+
 
 @dataclass(frozen=True)
 class UpdateQuestionBaseInput:

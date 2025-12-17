@@ -69,12 +69,18 @@ class IPracticeTestRepository(ABC):
 
     @abstractmethod
     def get_practice_test_detail_by_id(
+        self, practice_test_id: str
+    ) -> PraceticeTestWithDetailsResponse:
+        pass
+
+    @abstractmethod
+    def get_practice_test_random_detail_by_id(
         self, practice_test_id: str, count: int | None
     ) -> PraceticeTestWithDetailsResponse:
         pass
 
     @abstractmethod
-    def create_new_practice_test(self, payload: NewPracticeTestInput) -> UUID:
+    def create_new_practice_test(self, payload: NewPracticeTestInput) -> bool:
         pass
 
     @abstractmethod

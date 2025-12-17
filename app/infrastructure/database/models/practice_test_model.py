@@ -47,7 +47,7 @@ class PracticeTestQuestionModel(Base):
     question_text = Column(Text, nullable=False)
     question_type = Column(String(50), nullable=False)
     type_check = CheckConstraint(
-        question_type.in_(["MULTIPLE_CHOICE", "TRUE_FALSE", "WRITTEN"])
+        question_type.in_(["SINGLE_CHOICE", "MULTIPLE_CHOICE", "TRUE_FALSE"])
     )
 
     __table_args__ = (type_check,)

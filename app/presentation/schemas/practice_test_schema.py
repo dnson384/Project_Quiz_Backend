@@ -41,7 +41,7 @@ class PracticeTestDetailOutput(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
-
+# Thêm
 class BaseInfoInput(BaseModel):
     practice_test_name: str
 

@@ -45,16 +45,15 @@ def get_random_courses(
 )
 def get_detail(
     practice_test_id: str,
-    count: int | None = None,
     controller: PracticeTestController = Depends(get_practice_test_controller),
 ):
     return controller.get_practice_test_detail_by_id(
-        practice_test_id=practice_test_id, count=count
+        practice_test_id=practice_test_id
     )
 
 
 @router.post(
-    "/", response_model=PracticeTestDetailOutput, status_code=status.HTTP_201_CREATED
+    "/", response_model=bool, status_code=status.HTTP_201_CREATED
 )
 def create_new_practice_test(
     payload: NewPracticeTestInput,

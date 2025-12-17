@@ -31,11 +31,12 @@ class Mapper:
     def new_question_domain(
         practice_test_id: UUID, payload: NewQuestionBaseInput
     ) -> PracticeTestQuestion:
-        return PracticeTestQuestion.create_new_question(
+        domain = PracticeTestQuestion.create_new_question(
             practice_test_id=practice_test_id,
             question_text=payload.question_text,
             question_type=payload.question_type,
         )
+        return domain
 
     def new_option_domain(
         quesiton_id: UUID, payload: NewAnswerOptionInput

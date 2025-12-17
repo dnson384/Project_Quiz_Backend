@@ -132,7 +132,7 @@ class PracticeTestService:
             questions_domain.append(
                 NewQuestionInput(question=question_domain, options=options_domain)
             )
-
+        
         return self.practice_test_repo.create_new_practice_test(
             payload=NewPracticeTestInput(
                 base_info=base_info_domain, questions=questions_domain
