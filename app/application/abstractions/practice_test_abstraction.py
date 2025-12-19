@@ -17,6 +17,7 @@ from app.domain.entities.practice_test.answer_option_entity import (
     AnswerOptionOutput,
     NewAnswerOptionInput,
     UpdateAnswerOptionInput,
+    DeleteOption,
 )
 
 
@@ -90,17 +91,17 @@ class IPracticeTestRepository(ABC):
         base_info: Optional[UpdateBaseInfoInput],
         question_create: List[UpdateQuestionInput],
         question_update: List[UpdateQuestionInput],
-    ):
-        pass
-
-    @abstractmethod
-    def delete_answer_option(
-        self, practice_test_id: UUID, question_id: UUID, option_id: UUID
     ) -> bool:
         pass
 
     @abstractmethod
-    def delete_question(self, practice_test_id: UUID, question_id: UUID) -> bool:
+    def delete_answer_option(
+        self, practice_test_id: UUID, payload: List[DeleteOption]
+    ) -> bool:
+        pass
+
+    @abstractmethod
+    def delete_question(self, practice_test_id: UUID, question_id: List[UUID]) -> bool:
         pass
 
     @abstractmethod

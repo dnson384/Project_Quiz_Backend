@@ -93,3 +93,8 @@ class DTOUpdateQuestionInput(BaseModel):
 class DTOUpdatePracticeTestInput(BaseModel):
     base_info: Optional[DTOUpdateBaseInfoInput]
     questions: List[DTOUpdateQuestionInput]
+
+# Xoá
+class DTODeleteOptions(BaseModel):
+    question_id: UUID
+    option_id: UUID

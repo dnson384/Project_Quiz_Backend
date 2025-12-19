@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, status, Body
 from uuid import UUID
 from typing import List
 
@@ -6,8 +6,12 @@ from app.presentation.controllers.practice_test_controller import PracticeTestCo
 from app.presentation.schemas.practice_test_schema import (
     PracticeTestOutput,
     PracticeTestDetailOutput,
+    # Tạo
     NewPracticeTestInput,
+    # Sửa
     UpdatePracticeTestInput,
+    # Xoá
+    DeleteOptions,
 )
 from app.presentation.dependencies.dependencies import (
     get_practice_test_controller,
@@ -47,14 +51,10 @@ def get_detail(
     practice_test_id: str,
     controller: PracticeTestController = Depends(get_practice_test_controller),
 ):
-    return controller.get_practice_test_detail_by_id(
-        practice_test_id=practice_test_id
-    )
+    return controller.get_practice_test_detail_by_id(practice_test_id=practice_test_id)
 
 
-@router.post(
-    "/", response_model=bool, status_code=status.HTTP_201_CREATED
-)
+@router.post("/", response_model=bool, status_code=status.HTTP_201_CREATED)
 def create_new_practice_test(
     payload: NewPracticeTestInput,
     user_id: UUID = Depends(get_current_user),
@@ -63,7 +63,7 @@ def create_new_practice_test(
     return controller.create_new_practice_test(user_id, payload)
 
 
-@router.put("/{practice_test_id}", status_code=status.HTTP_200_OK)
+@router.put("/{practice_test_id}", response_model=bool, status_code=status.HTTP_200_OK)
 def update_practice_test(
     practice_test_id: UUID,
     payload: UpdatePracticeTestInput,
@@ -74,28 +74,27 @@ def update_practice_test(
 
 
 @router.delete(
-    "/{practice_test_id}/question/{question_id}/option/{option_id}",
+    "/{practice_test_id}/options",
     response_model=bool,
     status_code=status.HTTP_200_OK,
 )
 def delete_option(
     practice_test_id: UUID,
-    question_id: UUID,
-    option_id: UUID,
+    payload: List[DeleteOptions],
     user_id: UUID = Depends(get_current_user),
     controller: PracticeTestController = Depends(get_practice_test_controller),
 ):
-    return controller.delete_option(user_id, practice_test_id, question_id, option_id)
+    return controller.delete_option(user_id, practice_test_id, payload)
 
 
 @router.delete(
-    "/{practice_test_id}/question/{question_id}",
+    "/{practice_test_id}/questions",
     response_model=bool,
     status_code=status.HTTP_200_OK,
 )
 def delete_question(
     practice_test_id: UUID,
-    question_id: UUID,
+    question_id: List[UUID] = Body(..., embed=True),
     user_id: UUID = Depends(get_current_user),
     controller: PracticeTestController = Depends(get_practice_test_controller),
 ):

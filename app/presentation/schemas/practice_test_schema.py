@@ -91,3 +91,9 @@ class UpdateQuestionInput(BaseModel):
 class UpdatePracticeTestInput(BaseModel):
     base_info: Optional[UpdateBaseInfoInput]
     questions: List[UpdateQuestionInput]
+
+
+# Xoá
+class DeleteOptions(BaseModel):
+    question_id: UUID
+    option_id: UUID

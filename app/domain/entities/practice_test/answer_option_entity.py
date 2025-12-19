@@ -90,3 +90,8 @@ class UpdateAnswerOptionInput:
     option_id: UUID
     option_text: str
     is_correct: bool
+
+@dataclass(frozen=True)
+class DeleteOption:
+    question_id: UUID
+    option_id: UUID

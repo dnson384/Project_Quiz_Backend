@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session, selectinload, joinedload
-from sqlalchemy import func
+from sqlalchemy import func, tuple_, asc
 from typing import List, Optional, TypedDict, Dict
 from uuid import UUID
 from dataclasses import dataclass
@@ -21,6 +21,7 @@ from app.domain.entities.practice_test.answer_option_entity import (
     AnswerOptionOutput,
     NewAnswerOptionInput,
     UpdateAnswerOptionInput,
+    DeleteOption,
 )
 from app.domain.exceptions.practice_test_exception import (
     PracticeTestsNotFoundErrorDomain,
@@ -214,6 +215,7 @@ class PracticeTestRepository(IPracticeTestRepository):
         questions_id_query = (
             self.db.query(PracticeTestQuestionModel.question_id)
             .filter(PracticeTestQuestionModel.practice_test_id == practice_test_id)
+            .order_by(asc(PracticeTestQuestionModel.question_id))
             .all()
         )
 
@@ -466,41 +468,40 @@ class PracticeTestRepository(IPracticeTestRepository):
                             cur_option.option_text = option.option_text
                             cur_option.is_correct = option.is_correct
             self.db.commit()
+            return True
         except Exception as e:
             self.db.rollback()
             raise e
 
     def delete_answer_option(
-        self, practice_test_id: UUID, question_id: UUID, option_id: UUID
+        self, practice_test_id: UUID, payload: List[DeleteOption]
     ) -> bool:
-        option = (
-            self.db.query(AnswerOptionModel)
-            .join(PracticeTestQuestionModel, AnswerOptionModel.answer_option_question)
-            .join(PracticeTestModel, PracticeTestQuestionModel.question_practice_test)
-            .filter(AnswerOptionModel.option_id == option_id)
-            .filter(PracticeTestQuestionModel.question_id == question_id)
-            .filter(PracticeTestModel.practice_test_id == practice_test_id)
-            .first()
-        )
+        pairs_to_delete = [(item.option_id, item.question_id) for item in payload]
 
-        if not option:
-            raise OptionNotFoundErrorDomain("Không tồn tại phương án trả lời")
-        self.db.delete(option)
+        valid_questions_subquery = self.db.query(
+            PracticeTestQuestionModel.question_id
+        ).filter(PracticeTestQuestionModel.practice_test_id == practice_test_id)
+
+        (
+            self.db.query(AnswerOptionModel)
+            .filter(
+                tuple_(AnswerOptionModel.option_id, AnswerOptionModel.question_id).in_(
+                    pairs_to_delete
+                )
+            )
+            .filter(AnswerOptionModel.question_id.in_(valid_questions_subquery))
+            .delete(synchronize_session=False)
+        )
         self.db.commit()
         return True
 
-    def delete_question(self, practice_test_id: UUID, question_id: UUID) -> bool:
-        question = (
+    def delete_question(self, practice_test_id: UUID, question_id: List[UUID]) -> bool:
+        (
             self.db.query(PracticeTestQuestionModel)
-            .join(PracticeTestModel, PracticeTestQuestionModel.question_practice_test)
-            .filter(PracticeTestQuestionModel.question_id == question_id)
-            .filter(PracticeTestModel.practice_test_id == practice_test_id)
-            .first()
+            .filter(PracticeTestQuestionModel.question_id.in_(question_id))
+            .filter(PracticeTestQuestionModel.practice_test_id == practice_test_id)
+            .delete(synchronize_session=False)
         )
-
-        if not question:
-            raise QuestionNotFoundErrorDomain("Không tồn tại câu hỏi")
-        self.db.delete(question)
         self.db.commit()
         return True
 

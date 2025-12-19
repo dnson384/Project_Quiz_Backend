@@ -18,6 +18,8 @@ from app.application.dtos.practice_test_dto import (
     DTOUpdateOptionInput,
     DTOUpdateQuestionInput,
     DTOUpdatePracticeTestInput,
+    # DELETE
+    DTODeleteOptions,
 )
 from app.application.exceptions import (
     PracticeTestsNotFoundError,
@@ -34,6 +36,7 @@ from app.presentation.schemas.practice_test_schema import (
     PracticeTestDetailOutput,
     NewPracticeTestInput,
     UpdatePracticeTestInput,
+    DeleteOptions,
 )
 
 
@@ -141,11 +144,8 @@ class PracticeTestController:
             base_info=base_info_dto, questions=questions_dto
         )
 
-
         try:
-            return self.service.create_new_practice_test(
-                payload=new_practice_test_dto
-            )
+            return self.service.create_new_practice_test(payload=new_practice_test_dto)
         except Exception as e:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
@@ -189,15 +189,12 @@ class PracticeTestController:
                 )
             )
         try:
-            self.service.update_practice_test(
+            return self.service.update_practice_test(
                 user_id,
                 practice_test_id,
                 DTOUpdatePracticeTestInput(
                     base_info=base_info_dto, questions=questions_dto
                 ),
-            )
-            return self.get_practice_test_detail_by_id(
-                practice_test_id=practice_test_id, count=None
             )
         except UserNotAllowError:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
@@ -205,11 +202,18 @@ class PracticeTestController:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
     def delete_option(
-        self, user_id: UUID, practice_test_id: UUID, question_id: UUID, option_id: UUID
+        self, user_id: UUID, practice_test_id: UUID, payload: List[DeleteOptions]
     ) -> bool:
         try:
             return self.service.delete_option(
-                user_id, practice_test_id, question_id, option_id
+                user_id,
+                practice_test_id,
+                [
+                    DTODeleteOptions(
+                        question_id=raw.question_id, option_id=raw.option_id
+                    )
+                    for raw in payload
+                ],
             )
         except UserNotAllowError:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
@@ -219,7 +223,7 @@ class PracticeTestController:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
     def delete_question(
-        self, user_id: UUID, practice_test_id: UUID, question_id: UUID
+        self, user_id: UUID, practice_test_id: UUID, question_id: List[UUID]
     ) -> bool:
         try:
             return self.service.delete_question(user_id, practice_test_id, question_id)

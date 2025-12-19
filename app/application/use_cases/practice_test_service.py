@@ -14,6 +14,7 @@ from app.domain.entities.practice_test.practice_test_question_entity import (
 from app.domain.entities.practice_test.answer_option_entity import (
     NewAnswerOptionInput,
     UpdateAnswerOptionInput,
+    DeleteOption,
 )
 from app.domain.exceptions.practice_test_exception import (
     PracticeTestsNotFoundErrorDomain,
@@ -28,6 +29,7 @@ from app.application.dtos.practice_test_dto import (
     DTOPracticeTestOutput,
     DTONewPracticeTestInput,
     DTOUpdatePracticeTestInput,
+    DTODeleteOptions,
 )
 from app.application.exceptions import (
     UserNotAllowError,
@@ -97,8 +99,10 @@ class PracticeTestService:
             raise PracticeTestsNotFoundError(str(e))
         except Exception as e:
             raise Exception("Không thể lấy thông tin chi tiết bài kiểm tra thử", e)
-        
-    def get_practice_test_random_detail_by_id(self, practice_test_id: str, count: int | None):
+
+    def get_practice_test_random_detail_by_id(
+        self, practice_test_id: str, count: int | None
+    ):
         try:
             return self.practice_test_repo.get_practice_test_random_detail_by_id(
                 practice_test_id=practice_test_id, count=count
@@ -132,7 +136,7 @@ class PracticeTestService:
             questions_domain.append(
                 NewQuestionInput(question=question_domain, options=options_domain)
             )
-        
+
         return self.practice_test_repo.create_new_practice_test(
             payload=NewPracticeTestInput(
                 base_info=base_info_domain, questions=questions_domain
@@ -196,30 +200,31 @@ class PracticeTestService:
                     )
                 )
 
-        self.practice_test_repo.update_practice_test(
+        return self.practice_test_repo.update_practice_test(
             practice_test_id,
             base_info_domain,
             questions_create_domain,
             questions_update_domain,
         )
 
-        return self.practice_test_repo.get_practice_test_detail_by_id(
-            practice_test_id=practice_test_id, count=None
-        )
-
     def delete_option(
-        self, user_id: UUID, practice_test_id: UUID, question_id: UUID, option_id: UUID
+        self, user_id: UUID, practice_test_id: UUID, payload: List[DTODeleteOptions]
     ):
         self.check_valid_practice_test(user_id, practice_test_id)
         return self.practice_test_repo.delete_answer_option(
-            practice_test_id, question_id, option_id
+            practice_test_id,
+            [
+                DeleteOption(question_id=dto.question_id, option_id=dto.option_id)
+                for dto in payload
+            ],
         )
 
-    def delete_question(self, user_id: UUID, practice_test_id: UUID, question_id: UUID):
+    def delete_question(
+        self, user_id: UUID, practice_test_id: UUID, question_id: List[UUID]
+    ):
         self.check_valid_practice_test(user_id, practice_test_id)
         return self.practice_test_repo.delete_question(practice_test_id, question_id)
 
     def delete_practice_test(self, user_id: UUID, practice_test_id: UUID):
         self.check_valid_practice_test(user_id, practice_test_id)
-
         return self.practice_test_repo.delete_practice_test(practice_test_id)
