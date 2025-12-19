@@ -9,37 +9,46 @@ class DTOPracticeTestOutput(BaseModel):
     author_avatar_url: str
     author_username: str
 
-    model_config = ConfigDict(from_attributes=True)
-
 
 class DTOQuestion(BaseModel):
     question_id: UUID
     question_text: str
     question_type: str
 
-    model_config = ConfigDict(from_attributes=True)
 
-
-class DTOQuestionOptions(TypedDict):
+class DTOQuestionOptions(BaseModel):
     option_id: UUID
     option_text: str
     is_correct: bool
-
-    model_config = ConfigDict(from_attributes=True)
 
 
 class DTOPracticeTestQuestions(BaseModel):
     question: DTOQuestion
     options: List[DTOQuestionOptions]
 
-    model_config = ConfigDict(from_attributes=True)
-
 
 class DTOPracticeTestDetailOutput(BaseModel):
     practice_test: DTOPracticeTestOutput
     questions: List[DTOPracticeTestQuestions]
 
-    model_config = ConfigDict(from_attributes=True)
+
+# Lịch sử làm bài kiểm tra
+class DTOResultOutput(BaseModel):
+    result_id: UUID
+    num_of_question: int
+    score: int
+
+
+class DTOHistoryOutput(BaseModel):
+    history_id: UUID
+    option_id: Optional[UUID]
+    question_detail: DTOPracticeTestQuestions
+
+
+class DTOResultWithHistory(BaseModel):
+    result: DTOResultOutput
+    base_info: DTOPracticeTestOutput
+    histories: List[DTOHistoryOutput]
 
 
 # Thêm
@@ -68,6 +77,19 @@ class DTONewPracticeTestInput(BaseModel):
     questions: List[DTOQuestionInput]
 
 
+# Submit test
+class DTOAnsweredQuestion(BaseModel):
+    question_id: UUID
+    option_id: Optional[UUID]
+
+
+class DTOSubmitTestInput(BaseModel):
+    practice_test_id: UUID
+    answer_questions: List[DTOAnsweredQuestion]
+    num_of_questions: int
+    score: int
+
+
 # Sửa
 class DTOUpdateBaseInfoInput(BaseModel):
     practice_test_name: str
@@ -93,6 +115,7 @@ class DTOUpdateQuestionInput(BaseModel):
 class DTOUpdatePracticeTestInput(BaseModel):
     base_info: Optional[DTOUpdateBaseInfoInput]
     questions: List[DTOUpdateQuestionInput]
+
 
 # Xoá
 class DTODeleteOptions(BaseModel):

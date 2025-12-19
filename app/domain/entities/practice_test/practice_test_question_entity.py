@@ -1,7 +1,9 @@
 from uuid import UUID
 from uuid6 import uuid7
+from typing import List
 from dataclasses import dataclass
 
+from .answer_option_entity import AnswerOptionOutput
 
 class PracticeTestQuestion:
     def __init__(
@@ -64,6 +66,13 @@ class QuestionOutput:
     question_id: UUID
     question_text: str
     question_type: str
+
+@dataclass(frozen=True)
+class QuestionWithOptionsOutput:
+    question_id: UUID
+    question_text: str
+    question_type: str
+    options: List[AnswerOptionOutput]
 
 
 @dataclass(frozen=True)

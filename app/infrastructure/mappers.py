@@ -13,11 +13,21 @@ from app.domain.entities.practice_test.answer_option_entity import (
     AnswerOption,
     NewAnswerOptionInput,
 )
+from app.domain.entities.practice_test.practice_test_results_entity import (
+    PracticeTestResult,
+    ResultInput,
+)
+from app.domain.entities.practice_test.practice_test_histories import (
+    PracticeTestHistory,
+    HistoryInput,
+)
 
 from app.infrastructure.database.models.practice_test_model import (
     PracticeTestModel,
     PracticeTestQuestionModel,
     AnswerOptionModel,
+    PracticeTestResultModel,
+    PracticeTestHistoryModel,
 )
 
 
@@ -47,6 +57,23 @@ class Mapper:
             is_correct=payload.is_correct,
         )
 
+    def new_result_domain(user_id: UUID, result: ResultInput) -> PracticeTestResult:
+        return PracticeTestResult.create_new_practice_test_result(
+            user_id=user_id,
+            practice_test_id=result.practice_test_id,
+            num_of_questions=result.num_of_questions,
+            score=result.score,
+        )
+
+    def new_history_domain(
+        result_id: UUID, history: HistoryInput
+    ) -> PracticeTestHistory:
+        return PracticeTestHistory.create_new_history(
+            result_id=result_id,
+            question_id=history.question_id,
+            option_id=history.option_id,
+        )
+
     def practice_test_domain_to_model(domain: PracticeTest) -> PracticeTestModel:
         return PracticeTestModel(
             practice_test_id=domain.practice_test_id,
@@ -74,4 +101,25 @@ class Mapper:
             question_id=domain.question_id,
             option_text=domain.option_text,
             is_correct=domain.is_correct,
+        )
+
+    def practice_test_result_domain_to_model(
+        domain: PracticeTestResult,
+    ) -> PracticeTestResultModel:
+        return PracticeTestResultModel(
+            result_id=domain.result_id,
+            user_id=domain.user_id,
+            practice_test_id=domain.practice_test_id,
+            num_of_questions=domain.num_of_questions,
+            score=domain.score,
+        )
+
+    def practice_test_history_domain_to_model(
+        domain: PracticeTestHistory,
+    ) -> PracticeTestHistoryModel:
+        return PracticeTestHistoryModel(
+            history_id=domain.history_id,
+            result_id=domain.result_id,
+            question_id=domain.question_id,
+            option_id=domain.option_id,
         )

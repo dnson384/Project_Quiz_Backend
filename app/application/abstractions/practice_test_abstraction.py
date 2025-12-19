@@ -19,6 +19,8 @@ from app.domain.entities.practice_test.answer_option_entity import (
     UpdateAnswerOptionInput,
     DeleteOption,
 )
+from app.domain.entities.practice_test.practice_test_results_entity import ResultInput, ResultWithHistory
+from app.domain.entities.practice_test.practice_test_histories import HistoryInput
 
 
 @dataclass(frozen=True)
@@ -81,7 +83,21 @@ class IPracticeTestRepository(ABC):
         pass
 
     @abstractmethod
+    def get_all_histories(self, user_id: UUID) -> List[PracticeTestOutput]:
+        pass
+
+    @abstractmethod
+    def get_practice_test_history(self, user_id: UUID, practice_test_id: UUID) -> ResultWithHistory:
+        pass
+
+    @abstractmethod
     def create_new_practice_test(self, payload: NewPracticeTestInput) -> bool:
+        pass
+
+    @abstractmethod
+    def submit_test(
+        self, user_id: UUID, result: ResultInput, histories: List[HistoryInput]
+    ) -> bool:
         pass
 
     @abstractmethod

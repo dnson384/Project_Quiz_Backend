@@ -41,6 +41,26 @@ class PracticeTestDetailOutput(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
+
+# Lịch sự
+class ResultOutput(BaseModel):
+    result_id: UUID
+    num_of_question: int
+    score: int
+
+
+class HistoryOutput(BaseModel):
+    history_id: UUID
+    option_id: Optional[UUID]
+    question_detail: PracticeTestQuestions
+
+
+class ResultWithHistory(BaseModel):
+    result: ResultOutput
+    base_info: PracticeTestOutput
+    histories: List[HistoryOutput]
+
+
 # Thêm
 class BaseInfoInput(BaseModel):
     practice_test_name: str
@@ -64,6 +84,19 @@ class QuestionInput(BaseModel):
 class NewPracticeTestInput(BaseModel):
     base_info: BaseInfoInput
     questions: List[QuestionInput]
+
+
+# Submit test
+class AnsweredQuestion(BaseModel):
+    question_id: UUID
+    option_id: Optional[UUID]
+
+
+class SubmitTestInput(BaseModel):
+    practice_test_id: UUID
+    answer_questions: List[AnsweredQuestion]
+    num_of_questions: int
+    score: int
 
 
 # Sửa

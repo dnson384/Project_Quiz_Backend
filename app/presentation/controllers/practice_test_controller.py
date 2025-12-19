@@ -12,6 +12,8 @@ from app.application.dtos.practice_test_dto import (
     DTOAnswerOptionsInput,
     DTOQuestionInput,
     DTONewPracticeTestInput,
+    DTOAnsweredQuestion,
+    DTOSubmitTestInput,
     # PUT
     DTOUpdateBaseInfoInput,
     DTOUpdateQuestionBaseInput,
@@ -26,6 +28,7 @@ from app.application.exceptions import (
     QuestionNotFoundError,
     OptionNotFoundError,
     UserNotAllowError,
+    ResultNotFoundError,
 )
 
 from app.presentation.schemas.practice_test_schema import (
@@ -34,7 +37,13 @@ from app.presentation.schemas.practice_test_schema import (
     QuestionOptions,
     PracticeTestQuestions,
     PracticeTestDetailOutput,
+    # Lịch sử
+    ResultOutput,
+    HistoryOutput,
+    ResultWithHistory,
+    # Thêm
     NewPracticeTestInput,
+    SubmitTestInput,
     UpdatePracticeTestInput,
     DeleteOptions,
 )
@@ -114,6 +123,109 @@ class PracticeTestController:
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
             )
 
+    def get_random_questions_by_id(self, practice_test_id: str, count: int | None):
+        try:
+            response = self.service.get_random_questions_by_id(
+                practice_test_id=practice_test_id, count=count
+            )
+            practice_test = PracticeTestOutput(
+                practice_test_id=response.base_info.practice_test_id,
+                practice_test_name=response.base_info.practice_test_name,
+                author_avatar_url=response.base_info.author_avatar_url,
+                author_username=response.base_info.author_username,
+            )
+
+            questions: List[PracticeTestQuestions] = []
+            for question in response.questions:
+                question_data = Question(
+                    question_id=question.question.question_id,
+                    question_text=question.question.question_text,
+                    question_type=question.question.question_type,
+                )
+                options_data: List[QuestionOptions] = []
+                for option in question.options:
+                    options_data.append(
+                        QuestionOptions(
+                            option_id=option.option_id,
+                            option_text=option.option_text,
+                            is_correct=option.is_correct,
+                        )
+                    )
+
+                questions.append(
+                    PracticeTestQuestions(question=question_data, options=options_data)
+                )
+
+            return PracticeTestDetailOutput(
+                practice_test=practice_test, questions=questions
+            )
+        except PracticeTestsNotFoundError as e:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+        except Exception as e:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+            )
+
+    def get_all_histories(self, user_id: UUID):
+        response: List[DTOPracticeTestOutput] = self.service.get_all_histories(user_id)
+        return [
+            PracticeTestOutput(
+                practice_test_id=raw.practice_test_id,
+                practice_test_name=raw.practice_test_name,
+                author_avatar_url=raw.author_avatar_url,
+                author_username=raw.author_username,
+            )
+            for raw in response
+        ]
+
+    def get_practice_test_history(self, user_id: UUID, practice_test_id: UUID):
+        try:
+            response = self.service.get_practice_test_history(user_id, practice_test_id)
+            result = ResultOutput(
+                result_id=response.result.result_id,
+                num_of_question=response.result.num_of_question,
+                score=response.result.score,
+            )
+            base_info = PracticeTestOutput(
+                practice_test_id=response.base_info.practice_test_id,
+                practice_test_name=response.base_info.practice_test_name,
+                author_avatar_url=response.base_info.author_avatar_url,
+                author_username=response.base_info.author_username,
+            )
+            histories: List[HistoryOutput] = []
+            for history in response.histories:
+                question_detail = history.question_detail
+                question_base = Question(
+                    question_id=question_detail.question.question_id,
+                    question_text=question_detail.question.question_text,
+                    question_type=question_detail.question.question_type,
+                )
+                options = [
+                    QuestionOptions(
+                        option_id=option.option_id,
+                        option_text=option.option_text,
+                        is_correct=option.is_correct,
+                    )
+                    for option in question_detail.options
+                ]
+                histories.append(
+                    HistoryOutput(
+                        history_id=history.history_id,
+                        option_id=history.option_id,
+                        question_detail=PracticeTestQuestions(
+                            question=question_base, options=options
+                        ),
+                    )
+                )
+
+            return ResultWithHistory(
+                result=result, base_info=base_info, histories=histories
+            )
+        except PracticeTestsNotFoundError:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+        except ResultNotFoundError:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+
     def create_new_practice_test(self, user_id: UUID, payload: NewPracticeTestInput):
         base_info_dto = DTOBaseInfoInput(
             practice_test_name=payload.base_info.practice_test_name,
@@ -150,6 +262,22 @@ class PracticeTestController:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
             )
+
+    def submit_test(self, user_id: UUID, payload: SubmitTestInput):
+        dto_answer = [
+            DTOAnsweredQuestion(
+                question_id=answer.question_id,
+                option_id=answer.option_id,
+            )
+            for answer in payload.answer_questions
+        ]
+        dto_submit = DTOSubmitTestInput(
+            practice_test_id=payload.practice_test_id,
+            answer_questions=dto_answer,
+            num_of_questions=payload.num_of_questions,
+            score=payload.score,
+        )
+        return self.service.submit_test(user_id=user_id, payload=dto_submit)
 
     def update_practice_test(
         self, user_id: UUID, practice_test_id: UUID, payload: UpdatePracticeTestInput
