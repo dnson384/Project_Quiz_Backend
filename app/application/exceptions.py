@@ -37,6 +37,10 @@ class PracticeTestsNotFoundError(ApplicationError):
     pass
 
 
+class ResultNotFoundError(ApplicationError):
+    pass
+
+
 class QuestionNotFoundError(ApplicationError):
     pass
 

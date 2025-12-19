@@ -16,10 +16,14 @@ from app.domain.entities.practice_test.answer_option_entity import (
     UpdateAnswerOptionInput,
     DeleteOption,
 )
+from app.domain.entities.practice_test.practice_test_results_entity import (
+    ResultInput,
+    ResultWithHistory,
+)
+from app.domain.entities.practice_test.practice_test_histories import HistoryInput
 from app.domain.exceptions.practice_test_exception import (
     PracticeTestsNotFoundErrorDomain,
-    QuestionNotFoundErrorDomain,
-    OptionNotFoundErrorDomain,
+    ResultNotFoundErrorDomain,
 )
 
 from app.application.abstractions.practice_test_abstraction import (
@@ -27,15 +31,23 @@ from app.application.abstractions.practice_test_abstraction import (
 )
 from app.application.dtos.practice_test_dto import (
     DTOPracticeTestOutput,
+    DTOQuestion,
+    DTOQuestionOptions,
+    DTOPracticeTestQuestions,
+    # Lịch sử làm bài
+    DTOResultOutput,
+    DTOHistoryOutput,
+    DTOResultWithHistory,
+    # Thêm
     DTONewPracticeTestInput,
+    DTOSubmitTestInput,
     DTOUpdatePracticeTestInput,
     DTODeleteOptions,
 )
 from app.application.exceptions import (
     UserNotAllowError,
     PracticeTestsNotFoundError,
-    QuestionNotFoundError,
-    OptionNotFoundError,
+    ResultNotFoundError,
 )
 
 
@@ -100,9 +112,7 @@ class PracticeTestService:
         except Exception as e:
             raise Exception("Không thể lấy thông tin chi tiết bài kiểm tra thử", e)
 
-    def get_practice_test_random_detail_by_id(
-        self, practice_test_id: str, count: int | None
-    ):
+    def get_random_questions_by_id(self, practice_test_id: str, count: int | None):
         try:
             return self.practice_test_repo.get_practice_test_random_detail_by_id(
                 practice_test_id=practice_test_id, count=count
@@ -111,6 +121,72 @@ class PracticeTestService:
             raise PracticeTestsNotFoundError(str(e))
         except Exception as e:
             raise Exception("Không thể lấy thông tin chi tiết bài kiểm tra thử", e)
+
+    def get_all_histories(self, user_id: UUID):
+        response: List[PracticeTestOutput] = self.practice_test_repo.get_all_histories(
+            user_id
+        )
+        return [
+            DTOPracticeTestOutput(
+                practice_test_id=raw.practice_test_id,
+                practice_test_name=raw.practice_test_name,
+                author_avatar_url=raw.author_avatar_url,
+                author_username=raw.author_username,
+            )
+            for raw in response
+        ]
+
+    def get_practice_test_history(self, user_id: UUID, practice_test_id: UUID):
+        try:
+            response: ResultWithHistory = (
+                self.practice_test_repo.get_practice_test_history(
+                    user_id, practice_test_id
+                )
+            )
+            dto_result = DTOResultOutput(
+                result_id=response.result.result_id,
+                num_of_question=response.result.num_of_question,
+                score=response.result.score,
+            )
+            dto_base_info = DTOPracticeTestOutput(
+                practice_test_id=response.base_info.practice_test_id,
+                practice_test_name=response.base_info.practice_test_name,
+                author_avatar_url=response.base_info.author_avatar_url,
+                author_username=response.base_info.author_username,
+            )
+            dto_histories: List[DTOHistoryOutput] = []
+            for history in response.histories:
+                question_detail = history.question_detail
+                dto_question_base = DTOQuestion(
+                    question_id=question_detail.question_id,
+                    question_text=question_detail.question_text,
+                    question_type=question_detail.question_type,
+                )
+                dto_options = [
+                    DTOQuestionOptions(
+                        option_id=option.option_id,
+                        option_text=option.option_text,
+                        is_correct=option.is_correct,
+                    )
+                    for option in question_detail.options
+                ]
+                dto_histories.append(
+                    DTOHistoryOutput(
+                        history_id=history.history_id,
+                        option_id=history.option_id,
+                        question_detail=DTOPracticeTestQuestions(
+                            question=dto_question_base, options=dto_options
+                        ),
+                    )
+                )
+
+            return DTOResultWithHistory(
+                result=dto_result, base_info=dto_base_info, histories=dto_histories
+            )
+        except PracticeTestsNotFoundErrorDomain:
+            raise PracticeTestsNotFoundError
+        except ResultNotFoundErrorDomain:
+            raise ResultNotFoundError
 
     def create_new_practice_test(self, payload: DTONewPracticeTestInput):
         base_info_domain = NewBaseInfoInput(
@@ -141,6 +217,21 @@ class PracticeTestService:
             payload=NewPracticeTestInput(
                 base_info=base_info_domain, questions=questions_domain
             )
+        )
+
+    def submit_test(self, user_id: UUID, payload: DTOSubmitTestInput):
+        resutl_domain = ResultInput(
+            user_id=user_id,
+            practice_test_id=payload.practice_test_id,
+            num_of_questions=payload.num_of_questions,
+            score=payload.score,
+        )
+        history_domain = [
+            HistoryInput(question_id=answered.question_id, option_id=answered.option_id)
+            for answered in payload.answer_questions
+        ]
+        return self.practice_test_repo.submit_test(
+            user_id, resutl_domain, history_domain
         )
 
     def check_valid_practice_test(self, user_id: UUID, practice_test_id: UUID):

@@ -3,6 +3,10 @@ class BusinessError(Exception):
     pass
 
 
+class ResultNotFoundErrorDomain(BusinessError):
+    pass
+
+
 class PracticeTestsNotFoundErrorDomain(BusinessError):
     # Ném ra khi không tồn tại học phần.
     pass

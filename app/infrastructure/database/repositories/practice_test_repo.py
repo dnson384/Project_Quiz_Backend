@@ -1,4 +1,4 @@
-from sqlalchemy.orm import Session, selectinload, joinedload
+from sqlalchemy.orm import Session, selectinload, load_only
 from sqlalchemy import func, tuple_, asc
 from typing import List, Optional, TypedDict, Dict
 from uuid import UUID
@@ -15,6 +15,7 @@ from app.domain.entities.practice_test.practice_test_question_entity import (
     QuestionOutput,
     NewQuestionBaseInput,
     UpdateQuestionBaseInput,
+    QuestionWithOptionsOutput,
 )
 from app.domain.entities.practice_test.answer_option_entity import (
     AnswerOption,
@@ -25,14 +26,29 @@ from app.domain.entities.practice_test.answer_option_entity import (
 )
 from app.domain.exceptions.practice_test_exception import (
     PracticeTestsNotFoundErrorDomain,
+    ResultNotFoundErrorDomain,
     QuestionNotFoundErrorDomain,
     OptionNotFoundErrorDomain,
 )
+from app.domain.entities.practice_test.practice_test_results_entity import (
+    PracticeTestResult,
+    ResultInput,
+    ResultOutput,
+    ResultWithHistory,
+)
+from app.domain.entities.practice_test.practice_test_histories import (
+    PracticeTestHistory,
+    HistoryInput,
+    HistoryOutput,
+)
+
 
 from app.infrastructure.database.models.practice_test_model import (
     PracticeTestModel,
     PracticeTestQuestionModel,
     AnswerOptionModel,
+    PracticeTestResultModel,
+    PracticeTestHistoryModel,
 )
 from app.infrastructure.database.models.user_model import UserModel
 from app.infrastructure.mappers import Mapper
@@ -327,6 +343,117 @@ class PracticeTestRepository(IPracticeTestRepository):
             base_info=base_info_domain, questions=questions_domain
         )
 
+    def get_all_histories(self, user_id: UUID):
+        result_query = (
+            self.db.query(PracticeTestResultModel)
+            .filter(PracticeTestResultModel.user_id == user_id)
+            .all()
+        )
+        practice_test_id_to_find = [result.practice_test_id for result in result_query]
+
+        practice_test_query = (
+            self.db.query(
+                PracticeTestModel.practice_test_id,
+                PracticeTestModel.practice_test_name,
+                UserModel.username.label("author_username"),
+                UserModel.avatar_url.label("author_avatar_url"),
+            )
+            .join(UserModel, UserModel.user_id == PracticeTestModel.user_id)
+            .filter(PracticeTestModel.practice_test_id.in_(practice_test_id_to_find))
+            .all()
+        )
+        return [
+            PracticeTestOutput(
+                practice_test_id=practice_test.practice_test_id,
+                practice_test_name=practice_test.practice_test_name,
+                author_avatar_url=practice_test.author_username,
+                author_username=practice_test.author_username,
+            )
+            for practice_test in practice_test_query
+        ]
+
+    def get_practice_test_history(self, user_id: UUID, practice_test_id: UUID):
+        result_query = (
+            self.db.query(PracticeTestResultModel)
+            .filter(PracticeTestResultModel.user_id == user_id)
+            .filter(PracticeTestResultModel.practice_test_id == practice_test_id)
+            .first()
+        )
+        if not result_query:
+            raise ResultNotFoundErrorDomain
+
+        practice_test_query = (
+            self.db.query(
+                PracticeTestModel.practice_test_id,
+                PracticeTestModel.practice_test_name,
+                UserModel.username.label("author_username"),
+                UserModel.avatar_url.label("author_avatar_url"),
+            )
+            .filter(PracticeTestModel.practice_test_id == result_query.practice_test_id)
+            .join(UserModel, UserModel.user_id == PracticeTestModel.user_id)
+            .first()
+        )
+        if not practice_test_query:
+            raise PracticeTestsNotFoundErrorDomain
+
+        history_query = (
+            self.db.query(PracticeTestHistoryModel)
+            .filter(PracticeTestHistoryModel.result_id == result_query.result_id)
+            .options(
+                selectinload(PracticeTestHistoryModel.history_question)
+                .load_only(
+                    PracticeTestQuestionModel.question_text,
+                    PracticeTestQuestionModel.question_type,
+                )
+                .selectinload(PracticeTestQuestionModel.question_anwser_opt)
+                .load_only(AnswerOptionModel.option_text, AnswerOptionModel.is_correct)
+            )
+            .all()
+        )
+
+        result_domain = ResultOutput(
+            result_id=result_query.result_id,
+            num_of_question=result_query.num_of_questions,
+            score=result_query.score,
+        )
+        practice_test_domain = PracticeTestOutput(
+            practice_test_id=practice_test_query.practice_test_id,
+            practice_test_name=practice_test_query.practice_test_name,
+            author_avatar_url=practice_test_query.author_avatar_url,
+            author_username=practice_test_query.author_username,
+        )
+        history_domain: List[HistoryOutput] = []
+        for history in history_query:
+            options_domain = [
+                AnswerOptionOutput(
+                    option_id=opt.option_id,
+                    option_text=opt.option_text,
+                    is_correct=opt.is_correct,
+                )
+                for opt in history.history_question.question_anwser_opt
+            ]
+
+            question_domain = QuestionWithOptionsOutput(
+                question_id=history.history_question.question_id,
+                question_text=history.history_question.question_text,
+                question_type=history.history_question.question_type,
+                options=options_domain,
+            )
+
+            history_item = HistoryOutput(
+                history_id=history.history_id,
+                option_id=history.option_id,
+                question_detail=question_domain,
+            )
+
+            history_domain.append(history_item)
+
+        return ResultWithHistory(
+            result=result_domain,
+            base_info=practice_test_domain,
+            histories=history_domain,
+        )
+
     def create_new_practice_test(self, payload: NewPracticeTestInput):
         try:
             # Thêm thông tin cơ bản
@@ -344,7 +471,6 @@ class PracticeTestRepository(IPracticeTestRepository):
                 new_question_domain: PracticeTestQuestion = Mapper.new_question_domain(
                     new_practice_test_domain.practice_test_id, question_payload.question
                 )
-                print("pass")
                 new_question_model: PracticeTestQuestionModel = (
                     Mapper.question_domain_to_model(new_question_domain)
                 )
@@ -363,6 +489,32 @@ class PracticeTestRepository(IPracticeTestRepository):
             return True
         except Exception as e:
             print("Lỗi khi thêm bài kiểm tra thử mới", e)
+            self.db.rollback()
+            raise e
+
+    def submit_test(
+        self, user_id: UUID, result: ResultInput, histories: List[HistoryInput]
+    ) -> bool:
+        new_result: PracticeTestResult = Mapper.new_result_domain(user_id, result)
+        new_histories: List[PracticeTestHistory] = [
+            Mapper.new_history_domain(new_result.result_id, history)
+            for history in histories
+        ]
+
+        result_model: PracticeTestResultModel = (
+            Mapper.practice_test_result_domain_to_model(new_result)
+        )
+        histories_model: List[PracticeTestHistoryModel] = (
+            Mapper.practice_test_history_domain_to_model(history_domain)
+            for history_domain in new_histories
+        )
+
+        try:
+            self.db.add(result_model)
+            self.db.add_all(histories_model)
+            self.db.commit()
+            return True
+        except Exception as e:
             self.db.rollback()
             raise e
 

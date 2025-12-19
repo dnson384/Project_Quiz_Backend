@@ -49,6 +49,12 @@ class UserModel(Base):
         back_populates="practice_test_user",
         cascade="all, delete-orphan",
     )
+    # result
+    user_result = relationship(
+        "PracticeTestResultModel",
+        back_populates="result_user",
+        cascade="all, delete-orphan",
+    )
 
 
 class UserEmailModel(Base):
