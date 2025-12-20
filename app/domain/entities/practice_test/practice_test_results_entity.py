@@ -70,7 +70,7 @@ class ResultInput:
 @dataclass(frozen=True)
 class ResultOutput:
     result_id: UUID
-    num_of_question: int
+    num_of_questions: int
     score: int
 
 @dataclass(frozen=True)
@@ -78,3 +78,8 @@ class ResultWithHistory:
     result: ResultOutput
     base_info: PracticeTestOutput
     histories: List[HistoryOutput]
+
+@dataclass(frozen=True)
+class ResultWithPracticeTest:
+    result: ResultOutput
+    base_info: PracticeTestOutput

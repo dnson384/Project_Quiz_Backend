@@ -42,10 +42,10 @@ class PracticeTestDetailOutput(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
-# Lịch sự
+# Lịch sử
 class ResultOutput(BaseModel):
     result_id: UUID
-    num_of_question: int
+    num_of_questions: int
     score: int
 
 
@@ -54,6 +54,9 @@ class HistoryOutput(BaseModel):
     option_id: Optional[UUID]
     question_detail: PracticeTestQuestions
 
+class ResultWithPracticeTest(BaseModel):
+    result: ResultOutput
+    base_info: PracticeTestOutput
 
 class ResultWithHistory(BaseModel):
     result: ResultOutput

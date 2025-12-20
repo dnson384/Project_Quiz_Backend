@@ -19,7 +19,11 @@ from app.domain.entities.practice_test.answer_option_entity import (
     UpdateAnswerOptionInput,
     DeleteOption,
 )
-from app.domain.entities.practice_test.practice_test_results_entity import ResultInput, ResultWithHistory
+from app.domain.entities.practice_test.practice_test_results_entity import (
+    ResultInput,
+    ResultWithHistory,
+    ResultWithPracticeTest,
+)
 from app.domain.entities.practice_test.practice_test_histories import HistoryInput
 
 
@@ -83,11 +87,13 @@ class IPracticeTestRepository(ABC):
         pass
 
     @abstractmethod
-    def get_all_histories(self, user_id: UUID) -> List[PracticeTestOutput]:
+    def get_all_histories(self, user_id: UUID) -> List[ResultWithPracticeTest]:
         pass
 
     @abstractmethod
-    def get_practice_test_history(self, user_id: UUID, practice_test_id: UUID) -> ResultWithHistory:
+    def get_practice_test_history(
+        self, user_id: UUID, practice_test_id: UUID
+    ) -> ResultWithHistory:
         pass
 
     @abstractmethod

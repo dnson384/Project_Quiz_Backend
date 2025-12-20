@@ -35,6 +35,7 @@ from app.domain.entities.practice_test.practice_test_results_entity import (
     ResultInput,
     ResultOutput,
     ResultWithHistory,
+    ResultWithPracticeTest,
 )
 from app.domain.entities.practice_test.practice_test_histories import (
     PracticeTestHistory,
@@ -347,30 +348,44 @@ class PracticeTestRepository(IPracticeTestRepository):
         result_query = (
             self.db.query(PracticeTestResultModel)
             .filter(PracticeTestResultModel.user_id == user_id)
+            .options(
+                selectinload(PracticeTestResultModel.result_practice_test)
+                .load_only(
+                    PracticeTestModel.practice_test_id,
+                    PracticeTestModel.practice_test_name,
+                )
+                .selectinload(PracticeTestModel.practice_test_user)
+                .load_only(
+                    UserModel.avatar_url,
+                    UserModel.username,
+                )
+            )
             .all()
         )
-        practice_test_id_to_find = [result.practice_test_id for result in result_query]
 
-        practice_test_query = (
-            self.db.query(
-                PracticeTestModel.practice_test_id,
-                PracticeTestModel.practice_test_name,
-                UserModel.username.label("author_username"),
-                UserModel.avatar_url.label("author_avatar_url"),
+        result_with_test_domain: List[ResultWithPracticeTest] = []
+        for result in result_query:
+            result_domain = ResultOutput(
+                result_id=result.result_id,
+                num_of_questions=result.num_of_questions,
+                score=result.score,
             )
-            .join(UserModel, UserModel.user_id == PracticeTestModel.user_id)
-            .filter(PracticeTestModel.practice_test_id.in_(practice_test_id_to_find))
-            .all()
-        )
-        return [
-            PracticeTestOutput(
-                practice_test_id=practice_test.practice_test_id,
-                practice_test_name=practice_test.practice_test_name,
-                author_avatar_url=practice_test.author_username,
-                author_username=practice_test.author_username,
+
+            practice_result = result.result_practice_test
+            user_result = practice_result.practice_test_user
+            practice_test_domain = PracticeTestOutput(
+                practice_test_id=practice_result.practice_test_id,
+                practice_test_name=practice_result.practice_test_name,
+                author_avatar_url=user_result.avatar_url,
+                author_username=user_result.username,
             )
-            for practice_test in practice_test_query
-        ]
+
+            result_with_test_domain.append(
+                ResultWithPracticeTest(
+                    result=result_domain, base_info=practice_test_domain
+                )
+            )
+        return result_with_test_domain
 
     def get_practice_test_history(self, user_id: UUID, practice_test_id: UUID):
         result_query = (

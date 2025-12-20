@@ -35,7 +35,7 @@ class DTOPracticeTestDetailOutput(BaseModel):
 # Lịch sử làm bài kiểm tra
 class DTOResultOutput(BaseModel):
     result_id: UUID
-    num_of_question: int
+    num_of_questions: int
     score: int
 
 
@@ -43,6 +43,11 @@ class DTOHistoryOutput(BaseModel):
     history_id: UUID
     option_id: Optional[UUID]
     question_detail: DTOPracticeTestQuestions
+
+
+class DTOResultWithPracticeTest(BaseModel):
+    result: DTOResultOutput
+    base_info: DTOPracticeTestOutput
 
 
 class DTOResultWithHistory(BaseModel):

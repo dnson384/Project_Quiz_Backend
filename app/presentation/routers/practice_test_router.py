@@ -6,6 +6,7 @@ from app.presentation.controllers.practice_test_controller import PracticeTestCo
 from app.presentation.schemas.practice_test_schema import (
     PracticeTestOutput,
     PracticeTestDetailOutput,
+    ResultWithPracticeTest,
     ResultWithHistory,
     # Tạo
     NewPracticeTestInput,
@@ -68,9 +69,16 @@ def getrandom_questions(
 ):
     return controller.get_random_questions_by_id(practice_test_id, count)
 
-@router.get("/history", response_model=List[PracticeTestOutput], status_code=status.HTTP_200_OK)
-def get_all_histories(user_id: UUID = Depends(get_current_user), controller: PracticeTestController = Depends(get_practice_test_controller)):
+
+@router.get(
+    "/history", response_model=List[ResultWithPracticeTest], status_code=status.HTTP_200_OK
+)
+def get_all_histories(
+    user_id: UUID = Depends(get_current_user),
+    controller: PracticeTestController = Depends(get_practice_test_controller),
+):
     return controller.get_all_histories(user_id)
+
 
 @router.get(
     "/history/{practice_test_id}",

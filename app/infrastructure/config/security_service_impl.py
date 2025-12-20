@@ -23,7 +23,7 @@ class SecurityServiceImpl(ISecurityService):
     def create_access_token(self, payload: Dict[str, Any]) -> str:
         encoded_payload = payload.copy()
 
-        expire = datetime.now(timezone.utc) + timedelta(minutes=15)
+        expire = datetime.now(timezone.utc) + timedelta(minutes=30)
         issued_at = datetime.now(timezone.utc)
 
         encoded_payload.update(

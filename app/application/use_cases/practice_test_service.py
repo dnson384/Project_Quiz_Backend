@@ -19,6 +19,7 @@ from app.domain.entities.practice_test.answer_option_entity import (
 from app.domain.entities.practice_test.practice_test_results_entity import (
     ResultInput,
     ResultWithHistory,
+    ResultWithPracticeTest,
 )
 from app.domain.entities.practice_test.practice_test_histories import HistoryInput
 from app.domain.exceptions.practice_test_exception import (
@@ -37,6 +38,7 @@ from app.application.dtos.practice_test_dto import (
     # Lịch sử làm bài
     DTOResultOutput,
     DTOHistoryOutput,
+    DTOResultWithPracticeTest,
     DTOResultWithHistory,
     # Thêm
     DTONewPracticeTestInput,
@@ -123,18 +125,34 @@ class PracticeTestService:
             raise Exception("Không thể lấy thông tin chi tiết bài kiểm tra thử", e)
 
     def get_all_histories(self, user_id: UUID):
-        response: List[PracticeTestOutput] = self.practice_test_repo.get_all_histories(
-            user_id
+        response: List[ResultWithPracticeTest] = (
+            self.practice_test_repo.get_all_histories(user_id)
         )
-        return [
-            DTOPracticeTestOutput(
-                practice_test_id=raw.practice_test_id,
-                practice_test_name=raw.practice_test_name,
-                author_avatar_url=raw.author_avatar_url,
-                author_username=raw.author_username,
+
+        dto_response: List[DTOResultWithPracticeTest] = []
+        for raw in response:
+            result_domain = raw.result
+            base_info_domain = raw.base_info
+
+            result_domain = DTOResultOutput(
+                result_id=result_domain.result_id,
+                num_of_questions=result_domain.num_of_questions,
+                score=result_domain.score,
             )
-            for raw in response
-        ]
+
+            practice_test_domain = DTOPracticeTestOutput(
+                practice_test_id=base_info_domain.practice_test_id,
+                practice_test_name=base_info_domain.practice_test_name,
+                author_avatar_url=base_info_domain.author_avatar_url,
+                author_username=base_info_domain.author_username,
+            )
+
+            dto_response.append(
+                DTOResultWithPracticeTest(
+                    result=result_domain, base_info=practice_test_domain
+                )
+            )
+        return dto_response
 
     def get_practice_test_history(self, user_id: UUID, practice_test_id: UUID):
         try:
@@ -145,7 +163,7 @@ class PracticeTestService:
             )
             dto_result = DTOResultOutput(
                 result_id=response.result.result_id,
-                num_of_question=response.result.num_of_question,
+                num_of_questions=response.result.num_of_questions,
                 score=response.result.score,
             )
             dto_base_info = DTOPracticeTestOutput(
@@ -223,7 +241,7 @@ class PracticeTestService:
         resutl_domain = ResultInput(
             user_id=user_id,
             practice_test_id=payload.practice_test_id,
-            num_of_questions=payload.num_of_questions,
+            num_of_questionss=payload.num_of_questionss,
             score=payload.score,
         )
         history_domain = [
