@@ -71,7 +71,9 @@ def getrandom_questions(
 
 
 @router.get(
-    "/history", response_model=List[ResultWithPracticeTest], status_code=status.HTTP_200_OK
+    "/history",
+    response_model=List[ResultWithPracticeTest],
+    status_code=status.HTTP_200_OK,
 )
 def get_all_histories(
     user_id: UUID = Depends(get_current_user),
@@ -87,10 +89,11 @@ def get_all_histories(
 )
 def get_practice_test_history(
     practice_test_id: UUID,
+    result_id: UUID,
     user_id: UUID = Depends(get_current_user),
     controller: PracticeTestController = Depends(get_practice_test_controller),
 ):
-    return controller.get_practice_test_history(user_id, practice_test_id)
+    return controller.get_practice_test_history(user_id, result_id, practice_test_id)
 
 
 @router.post("/", response_model=bool, status_code=status.HTTP_201_CREATED)

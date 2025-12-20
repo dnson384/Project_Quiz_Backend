@@ -25,6 +25,7 @@ from app.domain.entities.practice_test.practice_test_histories import HistoryInp
 from app.domain.exceptions.practice_test_exception import (
     PracticeTestsNotFoundErrorDomain,
     ResultNotFoundErrorDomain,
+    UserNotAllowThisResultErrorDomain,
 )
 
 from app.application.abstractions.practice_test_abstraction import (
@@ -50,6 +51,7 @@ from app.application.exceptions import (
     UserNotAllowError,
     PracticeTestsNotFoundError,
     ResultNotFoundError,
+    UserNotAllowThisResultError,
 )
 
 
@@ -154,11 +156,13 @@ class PracticeTestService:
             )
         return dto_response
 
-    def get_practice_test_history(self, user_id: UUID, practice_test_id: UUID):
+    def get_practice_test_history(
+        self, user_id: UUID, result_id: UUID, practice_test_id: UUID
+    ):
         try:
             response: ResultWithHistory = (
                 self.practice_test_repo.get_practice_test_history(
-                    user_id, practice_test_id
+                    user_id, result_id, practice_test_id
                 )
             )
             dto_result = DTOResultOutput(
@@ -172,9 +176,10 @@ class PracticeTestService:
                 author_avatar_url=response.base_info.author_avatar_url,
                 author_username=response.base_info.author_username,
             )
+
             dto_histories: List[DTOHistoryOutput] = []
             for history in response.histories:
-                question_detail = history.question_detail
+                question_detail = history.history.question_detail
                 dto_question_base = DTOQuestion(
                     question_id=question_detail.question_id,
                     question_text=question_detail.question_text,
@@ -190,17 +195,19 @@ class PracticeTestService:
                 ]
                 dto_histories.append(
                     DTOHistoryOutput(
-                        history_id=history.history_id,
-                        option_id=history.option_id,
+                        history_id=history.history.history_id,
+                        option_id=history.history.option_id,
                         question_detail=DTOPracticeTestQuestions(
                             question=dto_question_base, options=dto_options
                         ),
-                    )
+                    ),
                 )
 
             return DTOResultWithHistory(
                 result=dto_result, base_info=dto_base_info, histories=dto_histories
             )
+        except UserNotAllowThisResultErrorDomain:
+            raise UserNotAllowThisResultError
         except PracticeTestsNotFoundErrorDomain:
             raise PracticeTestsNotFoundError
         except ResultNotFoundErrorDomain:
@@ -241,13 +248,24 @@ class PracticeTestService:
         resutl_domain = ResultInput(
             user_id=user_id,
             practice_test_id=payload.practice_test_id,
-            num_of_questionss=payload.num_of_questionss,
+            num_of_questions=payload.num_of_questions,
             score=payload.score,
         )
-        history_domain = [
-            HistoryInput(question_id=answered.question_id, option_id=answered.option_id)
-            for answered in payload.answer_questions
-        ]
+
+        history_domain: List[HistoryInput] = []
+        for answered in payload.answer_questions:
+            if answered.option_id:
+                for option_id in answered.option_id:
+                    history_domain.append(
+                        HistoryInput(
+                            question_id=answered.question_id, option_id=option_id
+                        )
+                    )
+            else:
+                history_domain.append(
+                    HistoryInput(question_id=answered.question_id, option_id=None)
+                )
+
         return self.practice_test_repo.submit_test(
             user_id, resutl_domain, history_domain
         )

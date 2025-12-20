@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session, selectinload, load_only
 from sqlalchemy import func, tuple_, asc
-from typing import List, Optional, TypedDict, Dict
+from typing import List, Optional
 from uuid import UUID
 from dataclasses import dataclass
 
@@ -27,8 +27,7 @@ from app.domain.entities.practice_test.answer_option_entity import (
 from app.domain.exceptions.practice_test_exception import (
     PracticeTestsNotFoundErrorDomain,
     ResultNotFoundErrorDomain,
-    QuestionNotFoundErrorDomain,
-    OptionNotFoundErrorDomain,
+    UserNotAllowThisResultErrorDomain,
 )
 from app.domain.entities.practice_test.practice_test_results_entity import (
     PracticeTestResult,
@@ -41,6 +40,7 @@ from app.domain.entities.practice_test.practice_test_histories import (
     PracticeTestHistory,
     HistoryInput,
     HistoryOutput,
+    QuestionHistory,
 )
 
 
@@ -387,15 +387,21 @@ class PracticeTestRepository(IPracticeTestRepository):
             )
         return result_with_test_domain
 
-    def get_practice_test_history(self, user_id: UUID, practice_test_id: UUID):
+    def get_practice_test_history(
+        self, user_id: UUID, result_id: UUID, practice_test_id: UUID
+    ):
         result_query = (
             self.db.query(PracticeTestResultModel)
-            .filter(PracticeTestResultModel.user_id == user_id)
-            .filter(PracticeTestResultModel.practice_test_id == practice_test_id)
+            .filter(PracticeTestResultModel.result_id == result_id)
             .first()
         )
         if not result_query:
             raise ResultNotFoundErrorDomain
+        elif (
+            result_query.user_id != user_id
+            or result_query.practice_test_id != practice_test_id
+        ):
+            raise UserNotAllowThisResultErrorDomain
 
         practice_test_query = (
             self.db.query(
@@ -428,7 +434,7 @@ class PracticeTestRepository(IPracticeTestRepository):
 
         result_domain = ResultOutput(
             result_id=result_query.result_id,
-            num_of_question=result_query.num_of_questions,
+            num_of_questions=result_query.num_of_questions,
             score=result_query.score,
         )
         practice_test_domain = PracticeTestOutput(
@@ -437,8 +443,22 @@ class PracticeTestRepository(IPracticeTestRepository):
             author_avatar_url=practice_test_query.author_avatar_url,
             author_username=practice_test_query.author_username,
         )
-        history_domain: List[HistoryOutput] = []
+
+        history_domain: List[QuestionHistory] = []
         for history in history_query:
+            existing_question = next(
+                (
+                    item
+                    for item in history_domain
+                    if item.question_id == history.question_id
+                ),
+                None,
+            )
+
+            if existing_question:
+                existing_question.history.option_id.append(history.option_id)
+                continue
+
             options_domain = [
                 AnswerOptionOutput(
                     option_id=opt.option_id,
@@ -457,11 +477,13 @@ class PracticeTestRepository(IPracticeTestRepository):
 
             history_item = HistoryOutput(
                 history_id=history.history_id,
-                option_id=history.option_id,
+                option_id=[history.option_id],
                 question_detail=question_domain,
             )
 
-            history_domain.append(history_item)
+            history_domain.append(
+                QuestionHistory(question_id=history.question_id, history=history_item)
+            )
 
         return ResultWithHistory(
             result=result_domain,

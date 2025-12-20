@@ -4,7 +4,7 @@ from typing import List
 from dataclasses import dataclass
 
 from .practice_test_entity import PracticeTestOutput
-from .practice_test_histories import HistoryOutput
+from .practice_test_histories import QuestionHistory
 
 class PracticeTestResult:
     def __init__(
@@ -77,7 +77,7 @@ class ResultOutput:
 class ResultWithHistory:
     result: ResultOutput
     base_info: PracticeTestOutput
-    histories: List[HistoryOutput]
+    histories: List[QuestionHistory]
 
 @dataclass(frozen=True)
 class ResultWithPracticeTest:

@@ -16,7 +16,7 @@ class AccountNotFoundError(ApplicationError):
     pass
 
 
-# User
+# ----------------User----------------
 class UserNotFoundError(ApplicationError):
     pass
 
@@ -25,6 +25,7 @@ class UserNotAllowError(ApplicationError):
     pass
 
 
+# ----------------Course----------------
 class CourseNotFoundError(ApplicationError):
     pass
 
@@ -33,11 +34,8 @@ class CourseDetailNotFoundError(ApplicationError):
     pass
 
 
+# ----------------Test----------------
 class PracticeTestsNotFoundError(ApplicationError):
-    pass
-
-
-class ResultNotFoundError(ApplicationError):
     pass
 
 
@@ -46,4 +44,12 @@ class QuestionNotFoundError(ApplicationError):
 
 
 class OptionNotFoundError(ApplicationError):
+    pass
+
+# ----------------Result----------------
+class ResultNotFoundError(ApplicationError):
+    pass
+
+
+class UserNotAllowThisResultError(ApplicationError):
     pass

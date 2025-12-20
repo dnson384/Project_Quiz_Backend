@@ -41,7 +41,7 @@ class DTOResultOutput(BaseModel):
 
 class DTOHistoryOutput(BaseModel):
     history_id: UUID
-    option_id: Optional[UUID]
+    option_id: List[UUID]
     question_detail: DTOPracticeTestQuestions
 
 
@@ -85,7 +85,7 @@ class DTONewPracticeTestInput(BaseModel):
 # Submit test
 class DTOAnsweredQuestion(BaseModel):
     question_id: UUID
-    option_id: Optional[UUID]
+    option_id: Optional[List[UUID]]
 
 
 class DTOSubmitTestInput(BaseModel):
