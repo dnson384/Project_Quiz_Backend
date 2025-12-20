@@ -6,6 +6,7 @@ from typing import List
 from app.application.use_cases.practice_test_service import PracticeTestService
 from app.application.dtos.practice_test_dto import (
     DTOPracticeTestOutput,
+    DTOResultWithPracticeTest,
     # POST
     DTOBaseInfoInput,
     DTOQuestionBaseInput,
@@ -40,6 +41,7 @@ from app.presentation.schemas.practice_test_schema import (
     # Lịch sử
     ResultOutput,
     HistoryOutput,
+    ResultWithPracticeTest,
     ResultWithHistory,
     # Thêm
     NewPracticeTestInput,
@@ -167,23 +169,40 @@ class PracticeTestController:
             )
 
     def get_all_histories(self, user_id: UUID):
-        response: List[DTOPracticeTestOutput] = self.service.get_all_histories(user_id)
-        return [
-            PracticeTestOutput(
-                practice_test_id=raw.practice_test_id,
-                practice_test_name=raw.practice_test_name,
-                author_avatar_url=raw.author_avatar_url,
-                author_username=raw.author_username,
+        dto_response: List[DTOResultWithPracticeTest] = self.service.get_all_histories(
+            user_id
+        )
+        response: List[ResultWithPracticeTest] = []
+        for raw in dto_response:
+            result_domain = raw.result
+            base_info_domain = raw.base_info
+
+            result_domain = ResultOutput(
+                result_id=result_domain.result_id,
+                num_of_questions=result_domain.num_of_questions,
+                score=result_domain.score,
             )
-            for raw in response
-        ]
+
+            practice_test_domain = PracticeTestOutput(
+                practice_test_id=base_info_domain.practice_test_id,
+                practice_test_name=base_info_domain.practice_test_name,
+                author_avatar_url=base_info_domain.author_avatar_url,
+                author_username=base_info_domain.author_username,
+            )
+
+            response.append(
+                ResultWithPracticeTest(
+                    result=result_domain, base_info=practice_test_domain
+                )
+            )
+        return response
 
     def get_practice_test_history(self, user_id: UUID, practice_test_id: UUID):
         try:
             response = self.service.get_practice_test_history(user_id, practice_test_id)
             result = ResultOutput(
                 result_id=response.result.result_id,
-                num_of_question=response.result.num_of_question,
+                num_of_questions=response.result.num_of_questions,
                 score=response.result.score,
             )
             base_info = PracticeTestOutput(
