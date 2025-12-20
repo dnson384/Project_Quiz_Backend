@@ -92,7 +92,7 @@ class IPracticeTestRepository(ABC):
 
     @abstractmethod
     def get_practice_test_history(
-        self, user_id: UUID, practice_test_id: UUID
+        self, user_id: UUID, result_id: UUID, practice_test_id: UUID
     ) -> ResultWithHistory:
         pass
 

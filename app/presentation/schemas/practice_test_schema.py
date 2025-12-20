@@ -51,12 +51,14 @@ class ResultOutput(BaseModel):
 
 class HistoryOutput(BaseModel):
     history_id: UUID
-    option_id: Optional[UUID]
+    option_id: List[UUID]
     question_detail: PracticeTestQuestions
+
 
 class ResultWithPracticeTest(BaseModel):
     result: ResultOutput
     base_info: PracticeTestOutput
+
 
 class ResultWithHistory(BaseModel):
     result: ResultOutput
@@ -92,7 +94,7 @@ class NewPracticeTestInput(BaseModel):
 # Submit test
 class AnsweredQuestion(BaseModel):
     question_id: UUID
-    option_id: Optional[UUID]
+    option_id: Optional[List[UUID]]
 
 
 class SubmitTestInput(BaseModel):

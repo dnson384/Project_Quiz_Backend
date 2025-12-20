@@ -30,6 +30,7 @@ from app.application.exceptions import (
     OptionNotFoundError,
     UserNotAllowError,
     ResultNotFoundError,
+    UserNotAllowThisResultError,
 )
 
 from app.presentation.schemas.practice_test_schema import (
@@ -197,9 +198,13 @@ class PracticeTestController:
             )
         return response
 
-    def get_practice_test_history(self, user_id: UUID, practice_test_id: UUID):
+    def get_practice_test_history(
+        self, user_id: UUID, result_id: UUID, practice_test_id: UUID
+    ):
         try:
-            response = self.service.get_practice_test_history(user_id, practice_test_id)
+            response = self.service.get_practice_test_history(
+                user_id, result_id, practice_test_id
+            )
             result = ResultOutput(
                 result_id=response.result.result_id,
                 num_of_questions=response.result.num_of_questions,
@@ -240,6 +245,8 @@ class PracticeTestController:
             return ResultWithHistory(
                 result=result, base_info=base_info, histories=histories
             )
+        except UserNotAllowThisResultError:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
         except PracticeTestsNotFoundError:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
         except ResultNotFoundError:

@@ -55,8 +55,15 @@ class HistoryInput:
     question_id: UUID
     option_id: Optional[UUID]
 
+
 @dataclass(frozen=True)
 class HistoryOutput:
     history_id: UUID
-    option_id: Optional[UUID]
+    option_id: List[UUID]
     question_detail: QuestionWithOptionsOutput
+
+
+@dataclass(frozen=True)
+class QuestionHistory:
+    question_id: UUID
+    history: HistoryOutput
