@@ -1,6 +1,7 @@
 from sqlalchemy import (
     Column,
     String,
+    Boolean,
     DateTime,
     Text,
     CheckConstraint,
@@ -30,6 +31,7 @@ class UserModel(Base):
     )
 
     avatar_url = Column(Text, nullable=True)
+    is_actived = Column(Boolean, default=True, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 

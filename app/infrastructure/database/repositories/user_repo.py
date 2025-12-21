@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from typing import Optional
+from typing import Optional, List
 from uuid import UUID
 from dataclasses import asdict
 
@@ -20,6 +20,21 @@ from app.application.abstractions.user_abstraction import IUserRepository
 class UserRepository(IUserRepository):
     def __init__(self, db: Session):
         self.db = db
+
+    def get_all_users(self) -> List[UserOutput]:
+        users = self.db.query(UserModel).filter(UserModel.role != "ADMIN").all()
+        return [
+            UserOutput(
+                user_id=user.user_id,
+                email=user.email,
+                username=user.username,
+                role=user.role,
+                avatar_url=user.avatar_url,
+                login_method=user.login_method,
+                is_actived=user.is_actived,
+            )
+            for user in users
+        ]
 
     def create_new_user_email(self, user_in: NewUserEmailInput) -> UserOutput:
         new_user_domain = User.create_new_user(
@@ -58,6 +73,7 @@ class UserRepository(IUserRepository):
             role=new_user_model.role,
             avatar_url=new_user_model.avatar_url,
             login_method=new_user_domain.login_method,
+            is_actived=new_user_domain.is_actived,
         )
 
     def get_user_email_auth(self, id: str) -> UserEmailOutput:
@@ -78,6 +94,7 @@ class UserRepository(IUserRepository):
                 role=query.role,
                 avatar_url=query.avatar_url,
                 login_method=query.login_method,
+                is_actived=query.is_actived,
             )
         return None
 
@@ -90,6 +107,7 @@ class UserRepository(IUserRepository):
             role=user.role,
             avatar_url=user.avatar_url,
             login_method=user.login_method,
+            is_actived=user.is_actived,
         )
 
     def update_user_by_id(self, id: UUID, payload: UpdateUserInput):
@@ -112,4 +130,32 @@ class UserRepository(IUserRepository):
             role=cur_user.role,
             avatar_url=cur_user.avatar_url,
             login_method=cur_user.login_method,
+            is_actived=cur_user.is_actived,
         )
+
+    def grant_admin(self, id: UUID) -> bool:
+        user = self.db.query(UserModel).filter(UserModel.user_id == id).first()
+        if not user:
+            raise UserNotFoundErrorDomain
+
+        user.role = "ADMIN"
+        self.db.commit()
+        return True
+
+    def lock_user(self, id: UUID) -> bool:
+        user = self.db.query(UserModel).filter(UserModel.user_id == id).first()
+        if not user:
+            raise UserNotFoundErrorDomain
+
+        user.is_actived = False
+        self.db.commit()
+        return True
+
+    def unlock_user(self, id: UUID) -> bool:
+        user = self.db.query(UserModel).filter(UserModel.user_id == id).first()
+        if not user:
+            raise UserNotFoundErrorDomain
+
+        user.is_actived = True
+        self.db.commit()
+        return True

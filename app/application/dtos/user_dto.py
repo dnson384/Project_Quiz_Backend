@@ -23,3 +23,4 @@ class DTOUserOutput(BaseModel):
     role: UserRole
     avatar_url: str
     login_method: str
+    is_actived: bool

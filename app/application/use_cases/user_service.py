@@ -27,6 +27,7 @@ class UserServices:
             role=cur_user.role,
             avatar_url=cur_user.avatar_url,
             login_method=cur_user.login_method,
+            is_actived=cur_user.is_actived,
         )
 
     def update_me(self, user_id: UUID, payload: DTOUpdateUserInput):
