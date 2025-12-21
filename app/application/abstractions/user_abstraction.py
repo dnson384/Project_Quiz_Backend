@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Optional
+from typing import Optional, List
 from uuid import UUID
 
 from app.domain.entities.user.user_entity import (
@@ -11,6 +11,10 @@ from app.domain.entities.user.user_email_entity import UserEmailOutput
 
 
 class IUserRepository(ABC):
+    @abstractmethod
+    def get_all_users(self) -> List[UserOutput]:
+        pass
+
     @abstractmethod
     def create_new_user_email(self, user_in: NewUserEmailInput) -> UserOutput:
         pass

@@ -23,6 +23,11 @@ class UserOut(BaseModel):
     avatar_url: str
 
 
+class CurrentUser(BaseModel):
+    user_id: UUID
+    role: UserRole
+
+
 class UserResponse(BaseModel):
     user: UserOut
     access_token: str | None

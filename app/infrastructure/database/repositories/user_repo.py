@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from typing import Optional
+from typing import Optional, List
 from uuid import UUID
 from dataclasses import asdict
 
@@ -20,6 +20,20 @@ from app.application.abstractions.user_abstraction import IUserRepository
 class UserRepository(IUserRepository):
     def __init__(self, db: Session):
         self.db = db
+
+    def get_all_users(self) -> List[UserOutput]:
+        users = self.db.query(UserModel).filter(UserModel.role != "ADMIN").all()
+        return [
+            UserOutput(
+                user_id=user.user_id,
+                email=user.email,
+                username=user.username,
+                role=user.role,
+                avatar_url=user.avatar_url,
+                login_method=user.login_method,
+            )
+            for user in users
+        ]
 
     def create_new_user_email(self, user_in: NewUserEmailInput) -> UserOutput:
         new_user_domain = User.create_new_user(

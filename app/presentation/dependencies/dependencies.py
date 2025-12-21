@@ -6,12 +6,14 @@ from app.application.use_cases.auth_service import AuthService
 from app.application.use_cases.user_service import UserServices
 from app.application.use_cases.course_service import CourseService
 from app.application.use_cases.practice_test_service import PracticeTestService
+from app.application.use_cases.admin_service import AdminServices
 
 from app.presentation.controllers.search_controller import SearchController
 from app.presentation.controllers.auth_controller import AuthController
 from app.presentation.controllers.user_controller import UserController
 from app.presentation.controllers.course_controller import CourseController
 from app.presentation.controllers.practice_test_controller import PracticeTestController
+from app.presentation.controllers.admin_controller import AdminController
 
 from app.application.abstractions.course_abstraction import ICourseRepository
 from app.application.abstractions.practice_test_abstraction import (
@@ -31,6 +33,8 @@ from app.infrastructure.config.dependencies import (
     get_refresh_token_repo,
     get_security_service,
 )
+
+from app.presentation.schemas.user_schema import CurrentUser
 
 
 def get_search_service(
@@ -98,9 +102,19 @@ def get_practice_test_controller(
     return PracticeTestController(service)
 
 
+def get_admin_service(
+    user_repo: IUserRepository = Depends(get_user_repo),
+) -> AdminServices:
+    return AdminServices(user_repo)
+
+
+def get_admin_controller(service: AdminServices = Depends(get_admin_service)):
+    return AdminController(service)
+
+
 def get_current_user(
     req: Request, controller: UserController = Depends(get_user_controller)
-) -> UUID:
+) -> CurrentUser:
     authorization = req.headers.get("Authorization")
     if not authorization:
         raise HTTPException(
@@ -110,6 +124,6 @@ def get_current_user(
 
     try:
         cur_user = controller.get_access_user(token)
-        return cur_user.user_id
+        return CurrentUser(user_id=cur_user.user_id, role=cur_user.role)
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
