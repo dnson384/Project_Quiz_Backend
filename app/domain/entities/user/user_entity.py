@@ -29,6 +29,7 @@ class User:
         _role: str,
         _login_method: str,
         _avatar_url: str,
+        _is_actived: bool,
         _created_at: datetime,
         _updated_at: datetime,
     ):
@@ -45,6 +46,7 @@ class User:
         self._role = _role
         self._login_method = _login_method
         self._avatar_url = _avatar_url
+        self._is_actived = _is_actived
         self._created_at = _created_at
         self._updated_at = _updated_at
 
@@ -64,6 +66,7 @@ class User:
             _role=role,
             _login_method=login_method,
             _avatar_url=avatar_url,
+            _is_actived=True,
             _created_at=datetime.utcnow(),
             _updated_at=datetime.utcnow(),
         )
@@ -93,6 +96,10 @@ class User:
         return self._avatar_url
 
     @property
+    def is_actived(self) -> str:
+        return self._is_actived
+
+    @property
     def created_at(self) -> datetime:
         return self._created_at
 
@@ -109,6 +116,7 @@ class UserOutput:
     role: UserRole
     avatar_url: str
     login_method: str
+    is_actived: bool
 
 
 @dataclass(frozen=True)

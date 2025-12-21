@@ -1,10 +1,9 @@
-from fastapi import status, HTTPException, UploadFile
+from fastapi import status, HTTPException
 from uuid import UUID
 
 from app.application.use_cases.admin_service import AdminServices
-from app.application.dtos.user_dto import DTOUpdateUserInput
-from app.application.exceptions import UserNotAllowError
-from app.presentation.schemas.user_schema import UpdateUserInput, UserOut
+from app.application.exceptions import UserNotAllowError, UserNotFoundError
+from app.presentation.schemas.user_schema import UserOut
 
 
 class AdminController:
@@ -21,8 +20,20 @@ class AdminController:
                     username=raw.username,
                     role=raw.role,
                     avatar_url=raw.avatar_url,
+                    is_actived=raw.is_actived,
                 )
                 for raw in response
             ]
         except UserNotAllowError:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+
+    def grant_admin(self, admin_id: UUID, role: str, user_id: UUID):
+        if role != "ADMIN":
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+
+        try:
+            return self.service.grant_admin(admin_id, user_id)
+        except UserNotAllowError:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+        except UserNotFoundError:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)

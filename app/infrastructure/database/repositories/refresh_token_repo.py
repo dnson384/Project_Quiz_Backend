@@ -43,11 +43,11 @@ class RefreshTokenRepository(IRefreshTokenRepository):
             return True
         return False
 
-    def revoke_all_tokens_for_user(self, user_id: UUID) -> int:
+    def revoke_all_tokens_for_user(self, user_id: UUID) -> bool:
         num_deleted = (
             self.db.query(RefreshTokenModel)
             .filter(RefreshTokenModel.user_id == user_id)
             .delete()
         )
         self.db.commit()
-        return num_deleted
+        return True

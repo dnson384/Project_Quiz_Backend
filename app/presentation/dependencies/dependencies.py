@@ -104,8 +104,9 @@ def get_practice_test_controller(
 
 def get_admin_service(
     user_repo: IUserRepository = Depends(get_user_repo),
+    token_repo: IRefreshTokenRepository = Depends(get_refresh_token_repo),
 ) -> AdminServices:
-    return AdminServices(user_repo)
+    return AdminServices(user_repo, token_repo)
 
 
 def get_admin_controller(service: AdminServices = Depends(get_admin_service)):

@@ -32,6 +32,7 @@ class UserController:
                 username=user.username,
                 role=user.role,
                 avatar_url=user.avatar_url,
+                login_method=user.login_method,
             )
         except AccountNotFoundError as e:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))

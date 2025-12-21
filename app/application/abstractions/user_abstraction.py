@@ -34,3 +34,7 @@ class IUserRepository(ABC):
     @abstractmethod
     def update_user_by_id(self, id: UUID, payload: UpdateUserInput) -> UserOutput:
         pass
+
+    @abstractmethod
+    def grant_admin(self, id: UUID) -> bool:
+        pass

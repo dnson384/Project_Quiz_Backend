@@ -21,6 +21,8 @@ class UserOut(BaseModel):
     email: str
     role: UserRole
     avatar_url: str
+    login_method: Optional[LoginMethod] = None
+    is_actived: Optional[bool] = None
 
 
 class CurrentUser(BaseModel):

@@ -12,9 +12,7 @@ from app.presentation.dependencies.dependencies import (
 router = APIRouter(prefix="/admin", tags=["ADMIN"])
 
 
-@router.get(
-    "/all-users", response_model=List[UserOut], status_code=status.HTTP_200_OK
-)
+@router.get("/all-users", response_model=List[UserOut], status_code=status.HTTP_200_OK)
 def get_all_users(
     current_user: CurrentUser = Depends(get_current_user),
     controller: AdminController = Depends(get_admin_controller),
@@ -24,10 +22,10 @@ def get_all_users(
     return controller.get_all_users(user_id, role)
 
 
-# @router.put("/update-me", status_code=status.HTTP_200_OK)
-# def update_me(
-#     payload: UpdateUserInput,
-#     user_id: UUID = Depends(get_current_user),
-#     controller: UserController = Depends(get_user_controller),
-# ):
-#     return controller.update_me(user_id, payload)
+@router.put("/grant-admin", response_model=bool, status_code=status.HTTP_200_OK)
+def grant_admin(
+    user_id: UUID,
+    current_user: CurrentUser = Depends(get_current_user),
+    controller: AdminController = Depends(get_admin_controller),
+):
+    return controller.grant_admin(current_user.user_id, current_user.role, user_id)
