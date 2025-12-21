@@ -20,6 +20,7 @@ from app.application.exceptions import (
     EmailExistedError,
     InvalidCredentialsError,
     AccountNotFoundError,
+    AccoutHasBeenLocked,
 )
 from app.application.abstractions.security_abstraction import ISecurityService
 from app.application.abstractions.user_abstraction import IUserRepository
@@ -72,6 +73,8 @@ class AuthService(IAuthService):
         )
         if not existed_user or existed_user.login_method != "EMAIL":
             raise InvalidCredentialsError("Email hoặc mật khẩu không chính xác")
+        if not existed_user.is_actived:
+            raise AccoutHasBeenLocked("Tài khoản đã bị khoá")
 
         # Kiểm tra mật khẩu
         user_email_auth: UserEmailOutput = self.user_repo.get_user_email_auth(

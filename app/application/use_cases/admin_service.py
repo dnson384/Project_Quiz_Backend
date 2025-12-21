@@ -48,3 +48,26 @@ class AdminServices:
                 return self.token_repo.revoke_all_tokens_for_user(user_id)
         except UserNotFoundErrorDomain:
             raise UserNotFoundError
+
+    def lock_user(self, admin_id: UUID, user_id: UUID):
+        current_admin = self.user_repo.get_user_by_id(admin_id)
+        if current_admin.role != "ADMIN":
+            raise UserNotAllowError
+        
+        try:
+            if self.user_repo.lock_user(user_id):
+                return self.token_repo.revoke_all_tokens_for_user(user_id)
+        except UserNotFoundErrorDomain:
+            raise UserNotFoundError
+        
+        
+    def unlock_user(self, admin_id: UUID, user_id: UUID):
+        current_admin = self.user_repo.get_user_by_id(admin_id)
+        if current_admin.role != "ADMIN":
+            raise UserNotAllowError
+        
+        try:
+            if self.user_repo.unlock_user(user_id):
+                return self.token_repo.revoke_all_tokens_for_user(user_id)
+        except UserNotFoundErrorDomain:
+            raise UserNotFoundError

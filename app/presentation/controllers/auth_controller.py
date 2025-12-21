@@ -11,6 +11,7 @@ from app.application.exceptions import (
     EmailExistedError,
     InvalidCredentialsError,
     AccountNotFoundError,
+    AccoutHasBeenLocked,
 )
 
 from app.presentation.schemas.user_schema import UserOut, UserResponse
@@ -59,7 +60,8 @@ class AuthController:
                 access_token=user_auth.access_token,
                 refresh_token=user_auth.refresh_token,
             )
-
+        except AccoutHasBeenLocked as e:
+            raise HTTPException(status_code=status.HTTP_423_LOCKED, detail=str(e))
         except InvalidCredentialsError as e:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
 

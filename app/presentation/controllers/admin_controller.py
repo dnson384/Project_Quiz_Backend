@@ -37,3 +37,25 @@ class AdminController:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
         except UserNotFoundError:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+
+    def lock_user(self, admin_id: UUID, role: str, user_id: UUID):
+        if role != "ADMIN":
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+
+        try:
+            return self.service.lock_user(admin_id, user_id)
+        except UserNotAllowError:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+        except UserNotFoundError:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+
+    def unlock_user(self, admin_id: UUID, role: str, user_id: UUID):
+        if role != "ADMIN":
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+
+        try:
+            return self.service.unlock_user(admin_id, user_id)
+        except UserNotAllowError:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+        except UserNotFoundError:
+            raise HTTPException(detail="User not found",status_code=status.HTTP_404_NOT_FOUND)

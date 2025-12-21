@@ -141,3 +141,21 @@ class UserRepository(IUserRepository):
         user.role = "ADMIN"
         self.db.commit()
         return True
+
+    def lock_user(self, id: UUID) -> bool:
+        user = self.db.query(UserModel).filter(UserModel.user_id == id).first()
+        if not user:
+            raise UserNotFoundErrorDomain
+
+        user.is_actived = False
+        self.db.commit()
+        return True
+
+    def unlock_user(self, id: UUID) -> bool:
+        user = self.db.query(UserModel).filter(UserModel.user_id == id).first()
+        if not user:
+            raise UserNotFoundErrorDomain
+
+        user.is_actived = True
+        self.db.commit()
+        return True

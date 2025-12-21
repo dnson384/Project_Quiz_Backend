@@ -15,6 +15,8 @@ class InvalidCredentialsError(ApplicationError):
 class AccountNotFoundError(ApplicationError):
     pass
 
+class AccoutHasBeenLocked(ApplicationError):
+    pass
 
 # ----------------User----------------
 class UserNotFoundError(ApplicationError):

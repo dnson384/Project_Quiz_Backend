@@ -29,3 +29,21 @@ def grant_admin(
     controller: AdminController = Depends(get_admin_controller),
 ):
     return controller.grant_admin(current_user.user_id, current_user.role, user_id)
+
+
+@router.put("/lock-user", response_model=bool, status_code=status.HTTP_200_OK)
+def lock_user(
+    user_id: UUID,
+    current_user: CurrentUser = Depends(get_current_user),
+    controller: AdminController = Depends(get_admin_controller),
+):
+    return controller.lock_user(current_user.user_id, current_user.role, user_id)
+
+
+@router.put("/unlock-user", response_model=bool, status_code=status.HTTP_200_OK)
+def unlock_user(
+    user_id: UUID,
+    current_user: CurrentUser = Depends(get_current_user),
+    controller: AdminController = Depends(get_admin_controller),
+):
+    return controller.unlock_user(current_user.user_id, current_user.role, user_id)

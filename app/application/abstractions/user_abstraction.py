@@ -38,3 +38,11 @@ class IUserRepository(ABC):
     @abstractmethod
     def grant_admin(self, id: UUID) -> bool:
         pass
+
+    @abstractmethod
+    def lock_user(self, id: UUID) -> bool:
+        pass
+
+    @abstractmethod
+    def unlock_user(self, id: UUID) -> bool:
+        pass
