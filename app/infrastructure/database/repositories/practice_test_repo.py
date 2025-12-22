@@ -531,7 +531,7 @@ class PracticeTestRepository(IPracticeTestRepository):
 
     def submit_test(
         self, user_id: UUID, result: ResultInput, histories: List[HistoryInput]
-    ) -> bool:
+    ) -> UUID:
         new_result: PracticeTestResult = Mapper.new_result_domain(user_id, result)
         new_histories: List[PracticeTestHistory] = [
             Mapper.new_history_domain(new_result.result_id, history)
@@ -550,7 +550,8 @@ class PracticeTestRepository(IPracticeTestRepository):
             self.db.add(result_model)
             self.db.add_all(histories_model)
             self.db.commit()
-            return True
+            self.db.refresh(result_model)
+            return result_model.result_id
         except Exception as e:
             self.db.rollback()
             raise e

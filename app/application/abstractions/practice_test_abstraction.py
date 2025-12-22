@@ -103,7 +103,7 @@ class IPracticeTestRepository(ABC):
     @abstractmethod
     def submit_test(
         self, user_id: UUID, result: ResultInput, histories: List[HistoryInput]
-    ) -> bool:
+    ) -> UUID:
         pass
 
     @abstractmethod

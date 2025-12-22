@@ -110,7 +110,7 @@ def create_new_practice_test(
     return controller.create_new_practice_test(user_id, payload)
 
 
-@router.post("/submit-test", response_model=bool, status_code=status.HTTP_201_CREATED)
+@router.post("/submit-test", response_model=UUID, status_code=status.HTTP_201_CREATED)
 def create_test_result(
     payload: SubmitTestInput,
     current_user: CurrentUser = Depends(get_current_user),
