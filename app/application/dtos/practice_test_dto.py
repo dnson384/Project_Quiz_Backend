@@ -41,7 +41,7 @@ class DTOResultOutput(BaseModel):
 
 class DTOHistoryOutput(BaseModel):
     history_id: UUID
-    option_id: List[UUID]
+    option_id: List[UUID | None]
     question_detail: DTOPracticeTestQuestions
 
 

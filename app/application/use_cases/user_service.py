@@ -47,4 +47,5 @@ class UserServices:
             role=updated_user.role,
             avatar_url=updated_user.avatar_url,
             login_method=updated_user.login_method,
+            is_actived=updated_user.is_actived,
         )

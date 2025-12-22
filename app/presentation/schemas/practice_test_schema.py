@@ -51,7 +51,7 @@ class ResultOutput(BaseModel):
 
 class HistoryOutput(BaseModel):
     history_id: UUID
-    option_id: List[UUID]
+    option_id: List[UUID | None]
     question_detail: PracticeTestQuestions
 
 
