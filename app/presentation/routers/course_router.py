@@ -24,9 +24,11 @@ router = APIRouter(prefix="/course", tags=["COURSE"])
     "/my-course", response_model=List[CourseOutput], status_code=status.HTTP_200_OK
 )
 def get_user_course(
-    user_id: UUID = Depends(get_current_user),
+    current_user: CurrentUser = Depends(get_current_user),
     controller: CourseController = Depends(get_course_controller),
 ):
+    print('run')
+    user_id = current_user.user_id
     return controller.get_user_course(user_id)
 
 
@@ -72,6 +74,7 @@ def create_new_course(
     current_user: CurrentUser = Depends(get_current_user),
     controller: CourseController = Depends(get_course_controller),
 ):
+    print(detail_in)
     user_id = current_user.user_id
     return controller.create_new_course(user_id, course_in, detail_in)
 

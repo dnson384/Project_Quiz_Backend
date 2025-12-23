@@ -49,8 +49,8 @@ class CourseController:
                 )
                 for course in courses
             ]
-        except CourseNotFoundError as e:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+        except CourseNotFoundError:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
 
     def get_random_course(self):
         try:
