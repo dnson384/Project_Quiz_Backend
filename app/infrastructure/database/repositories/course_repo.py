@@ -198,56 +198,54 @@ class CoursesRepository(ICourseRepository):
             .first()
         )
 
-    def get_course_detail_by_id(self, course_id: Optional[str]) -> CourseWithDetails:
-        try:
-            course_query = (
-                self.db.query(
-                    CourseModel.course_id,
-                    CourseModel.course_name,
-                    UserModel.avatar_url,
-                    UserModel.username,
-                    UserModel.role,
+    def get_course_detail_by_id(self, course_id: UUID) -> CourseWithDetails:
+        course_query = (
+            self.db.query(
+                CourseModel.course_id,
+                CourseModel.course_name,
+                UserModel.avatar_url,
+                UserModel.username,
+                UserModel.role,
+            )
+            .filter(CourseModel.course_id == course_id)
+            .join(UserModel, UserModel.user_id == CourseModel.user_id)
+            .first()
+        )
+        if not course_query:
+            raise CoursesNotFoundErrorDomain(f"Không tồn tại học phần {course_id}")
+
+        detail_query = (
+            self.db.query(
+                CourseDetailModel.course_detail_id,
+                CourseDetailModel.term,
+                CourseDetailModel.definition,
+            )
+            .filter(CourseDetailModel.course_id == course_id)
+            .all()
+        )
+
+        course_domain_result = CourseOutput(
+            course_id=course_query.course_id,
+            course_name=course_query.course_name,
+            author_avatar_url=course_query.avatar_url,
+            author_username=course_query.username,
+            author_role=course_query.role,
+            num_of_terms=len(detail_query),
+        )
+
+        detail_domain_result: List[CourseDetailOutput] = []
+        for item in detail_query:
+            detail_domain_result.append(
+                CourseDetailOutput(
+                    course_detail_id=item.course_detail_id,
+                    term=item.term,
+                    definition=item.definition,
                 )
-                .filter(CourseModel.course_id == course_id)
-                .join(UserModel, UserModel.user_id == CourseModel.user_id)
-                .first()
             )
 
-            detail_query = (
-                self.db.query(
-                    CourseDetailModel.course_detail_id,
-                    CourseDetailModel.term,
-                    CourseDetailModel.definition,
-                )
-                .filter(CourseDetailModel.course_id == course_id)
-                .all()
-            )
-
-            course_domain_result = CourseOutput(
-                course_id=course_query.course_id,
-                course_name=course_query.course_name,
-                author_avatar_url=course_query.avatar_url,
-                author_username=course_query.username,
-                author_role=course_query.role,
-                num_of_terms=len(detail_query),
-            )
-
-            detail_domain_result: List[CourseDetailOutput] = []
-            for item in detail_query:
-                detail_domain_result.append(
-                    CourseDetailOutput(
-                        course_detail_id=item.course_detail_id,
-                        term=item.term,
-                        definition=item.definition,
-                    )
-                )
-
-            return CourseWithDetails(
-                course=course_domain_result, course_detail=detail_domain_result
-            )
-        except Exception as e:
-            print("Có lỗi xảy ra khi lấy thông tin chi tiết học phần", e)
-            return None
+        return CourseWithDetails(
+            course=course_domain_result, course_detail=detail_domain_result
+        )
 
     # Thêm
     def create_new_course(

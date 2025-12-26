@@ -24,7 +24,7 @@ def upload_avatar(
     return controller.upload_temp_avatar(file)
 
 
-@router.put("/update-me", status_code=status.HTTP_200_OK)
+@router.put("/update-me", response_model=bool, status_code=status.HTTP_200_OK)
 def update_me(
     payload: UpdateUserInput,
     current_user: CurrentUser = Depends(get_current_user),

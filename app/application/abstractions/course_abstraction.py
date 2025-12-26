@@ -39,7 +39,7 @@ class ICourseRepository(ABC):
         pass
 
     @abstractmethod
-    def get_course_detail_by_id(self, course_id: str) -> CourseWithDetailsResponse:
+    def get_course_detail_by_id(self, course_id: UUID) -> CourseWithDetailsResponse:
         pass
 
     @abstractmethod

@@ -75,18 +75,15 @@ class CourseService:
         except Exception as e:
             raise Exception("Không thể lấy ngẫu nhiên học phần", e)
 
-    def get_course_detail_by_id(self, course_id: str):
+    def get_course_detail_by_id(self, course_id: UUID):
         try:
             course_detail_result = self.course_repo.get_course_detail_by_id(
                 course_id=course_id
             )
 
-            if not course_detail_result:
-                raise CourseNotFoundError("Không có học phần")
-
             return course_detail_result
-        except Exception as e:
-            raise Exception("Không thể thông tin học phần", e)
+        except CoursesNotFoundErrorDomain as e:
+            raise CourseNotFoundError(str(e))
 
     def create_question(self, current_course, course_detail):
         pool = [item for item in course_detail if item != current_course]

@@ -5,7 +5,10 @@ import shutil
 import os
 from pathlib import Path
 
-from app.domain.exceptions.auth_exceptions import AccountNotFoundError
+from app.domain.exceptions.auth_exceptions import (
+    AccountNotFoundError,
+    EmailAlreadyExistsError,
+)
 from app.application.use_cases.user_service import UserServices
 from app.application.dtos.user_dto import DTOUpdateUserInput
 from app.presentation.schemas.user_schema import UpdateUserInput, UserOut
@@ -39,7 +42,7 @@ class UserController:
 
     def upload_temp_avatar(self, file: UploadFile):
         if not file.content_type.startswith("image/"):
-            raise HTTPException(status_code=400, detail="File must be an image")
+            raise HTTPException(status_code=400, detail="File phải là kiểu ảnh")
         filename = f"{uuid4()}{os.path.splitext(file.filename)[1]}"
         file_path = TEMP_DIR / filename
         try:
@@ -63,20 +66,15 @@ class UserController:
                     payload.avatar_url = f"/static/avatars/{filename}"
             except Exception as e:
                 print(f"Lỗi khi di chuyển file: {e}")
-
-        updated_user = self.service.update_me(
-            user_id,
-            DTOUpdateUserInput(
-                username=payload.username,
-                email=payload.email,
-                role=payload.role,
-                avatar_url=payload.avatar_url,
-            ),
-        )
-        return UserOut(
-            user_id=updated_user.user_id,
-            email=updated_user.email,
-            username=updated_user.username,
-            role=updated_user.role,
-            avatar_url=updated_user.avatar_url,
-        )
+        try:
+            return self.service.update_me(
+                user_id,
+                DTOUpdateUserInput(
+                    username=payload.username,
+                    email=payload.email,
+                    role=payload.role,
+                    avatar_url=payload.avatar_url,
+                ),
+            )
+        except EmailAlreadyExistsError as e:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))

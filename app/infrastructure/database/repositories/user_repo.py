@@ -122,16 +122,7 @@ class UserRepository(IUserRepository):
             setattr(cur_user, key, value)
 
         self.db.commit()
-        self.db.refresh(cur_user)
-        return UserOutput(
-            user_id=cur_user.user_id,
-            email=cur_user.email,
-            username=cur_user.username,
-            role=cur_user.role,
-            avatar_url=cur_user.avatar_url,
-            login_method=cur_user.login_method,
-            is_actived=cur_user.is_actived,
-        )
+        return True
 
     def grant_admin(self, id: UUID) -> bool:
         user = self.db.query(UserModel).filter(UserModel.user_id == id).first()

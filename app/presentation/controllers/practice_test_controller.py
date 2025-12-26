@@ -121,10 +121,6 @@ class PracticeTestController:
             )
         except PracticeTestsNotFoundError as e:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
-        except Exception as e:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
-            )
 
     def get_random_questions_by_id(self, practice_test_id: str, count: int | None):
         try:

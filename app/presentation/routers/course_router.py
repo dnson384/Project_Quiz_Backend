@@ -27,7 +27,6 @@ def get_user_course(
     current_user: CurrentUser = Depends(get_current_user),
     controller: CourseController = Depends(get_course_controller),
 ):
-    print('run')
     user_id = current_user.user_id
     return controller.get_user_course(user_id)
 
@@ -41,7 +40,7 @@ def get_random_courses(controller: CourseController = Depends(get_course_control
 
 @router.get("/", response_model=CourseWithDetailsOutput, status_code=status.HTTP_200_OK)
 def get_coures_detail_by_id(
-    course_id: str, controller: CourseController = Depends(get_course_controller)
+    course_id: UUID, controller: CourseController = Depends(get_course_controller)
 ):
     result = controller.get_course_detail_by_id(course_id=course_id)
     return CourseWithDetailsOutput(

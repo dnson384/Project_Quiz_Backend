@@ -62,7 +62,7 @@ class CourseController:
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
             )
 
-    def get_course_detail_by_id(self, course_id: str):
+    def get_course_detail_by_id(self, course_id: UUID):
         try:
             response = self.service.get_course_detail_by_id(course_id=course_id)
             return CourseWithDetailsOutput(
@@ -71,10 +71,6 @@ class CourseController:
             )
         except CourseNotFoundError as e:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
-        except Exception as e:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
-            )
 
     def get_course_learn_by_id(self, course_id: str):
         try:

@@ -1,7 +1,7 @@
 from uuid import UUID
 
 from app.domain.entities.user.user_entity import UpdateUserInput
-from app.domain.exceptions.auth_exceptions import AccountNotFoundError
+from app.domain.exceptions.auth_exceptions import AccountNotFoundError, EmailAlreadyExistsError
 
 from app.application.abstractions.user_abstraction import IUserRepository
 from app.application.abstractions.auth_abstraction import IAuthService
@@ -31,7 +31,11 @@ class UserServices:
         )
 
     def update_me(self, user_id: UUID, payload: DTOUpdateUserInput):
-        updated_user = self.user_repo.update_user_by_id(
+        if payload.email:
+            if self.user_repo.check_user_email_existed(payload.email):
+                raise EmailAlreadyExistsError("Email đã tồn tại")
+
+        return self.user_repo.update_user_by_id(
             user_id,
             UpdateUserInput(
                 email=payload.email,
@@ -39,13 +43,4 @@ class UserServices:
                 role=payload.role,
                 avatar_url=payload.avatar_url,
             ),
-        )
-        return DTOUserOutput(
-            user_id=updated_user.user_id,
-            email=updated_user.email,
-            username=updated_user.username,
-            role=updated_user.role,
-            avatar_url=updated_user.avatar_url,
-            login_method=updated_user.login_method,
-            is_actived=updated_user.is_actived,
         )
